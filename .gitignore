@@ -4,3 +4,6 @@ VL_gps_data/
 
 # MAC os default file
 .DS_Store
+
+# image file
+*.png
