@@ -1,5 +1,3 @@
-"""Merge the preprocessed CSV files into a single traveller dataset."""
-
 import os
 
 import pandas as pd

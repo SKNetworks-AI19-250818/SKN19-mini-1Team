@@ -1,5 +1,3 @@
-"""Notebook-like preprocessing helpers written with beginner-friendly Python."""
-
 import io
 import json
 import os
