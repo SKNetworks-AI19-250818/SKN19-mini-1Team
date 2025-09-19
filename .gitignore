@@ -11,3 +11,9 @@ VL_gps_data/
 
 # pycache
 preprocessing/__pycache__/
+
+# codex
+AGENTS.md
+
+# 환경변수
+.env
