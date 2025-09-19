@@ -1,2 +1,4 @@
 # SKN19-mini-1Team
-EDA / ML mini project 1Team
+# 후회는 없다
+# 정해드립니다
+# 가기전에 봤다면...
