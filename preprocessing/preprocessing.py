@@ -35,6 +35,7 @@ def load_dataset(key, **read_csv_kwargs):
 
 def preprocess_activity_consumption(drop_columns=None, dataset_key="활동소비내역"):
     """Drop unused columns from the activity consumption table."""
+    # PLAN: keep PAYMENT_NUM and PAYMENT_MTHD_SE from TL_csv/tn_activity_consume_his so we can later emit activity_amt_mean_per_payment, activity_amt_max_single, and activity_card_ratio per TRAVEL_ID.
     # 파일에서 전처리 대상 데이터를 불러와 복사본으로 작업합니다.
 
     df = load_dataset(dataset_key).copy()
@@ -84,6 +85,7 @@ def load_activity_codebook():
 
 def preprocess_activity_history(dataset_key="활동내역", codebook=None):
     """Fill sparse fields and attach readable activity names."""
+    # PLAN: expose RSVT_YN, EXPND_SE, and ADMISSION_SE as binary indicators for downstream activity_reservation_rate, activity_paid_ratio, and activity_free_entry_ratio rollups sourced from TL_csv/tn_activity_his.
     # 전처리 대상 데이터를 불러와 복사본으로 안전하게 다룹니다.
 
     df = load_dataset(dataset_key).copy()
@@ -141,6 +143,7 @@ def preprocess_lodging_consumption(
     encode_columns=("RSVT_YN", "LODGING_TYPE_CD", "PAYMENT_MTHD_SE"),
 ):
     """Tidy the lodging consumption data and encode categorical fields."""
+    # PLAN: parse CHK_IN_DT_MIN and CHK_OUT_DT_MIN into lodging_nights and pair with PAYMENT_NUM to derive lodging_amt_per_night and lodging_payment_max using TL_csv/tn_lodge_consume_his.
     # 숙박 이용 정보와 여행 기본 정보를 각각 불러옵니다.
 
     df = load_dataset(dataset_key).copy()
@@ -227,6 +230,7 @@ def preprocess_lodging_consumption(
 
 def preprocess_traveller_master(dataset_key="여행객_Master"):
     """Clean the traveller master table."""
+    # PLAN: map INCOME, HOUSE_INCOME, TRAVEL_TERM, and TRAVEL_NUM codes to numeric midpoints so we can add traveller_income_midpt, traveller_house_income_midpt, and travel_freq_per_year features.
     # 여행객 기본 정보를 불러와 복사본으로 정리합니다.
 
     df = load_dataset(dataset_key).copy()
@@ -263,6 +267,7 @@ def preprocess_visit_area_info(
     return_base_table=False,
 ):
     """Create per-travel aggregates from the visit area table."""
+    # PLAN: reuse RESIDENCE_TIME_MIN plus DGSTFN, REVISIT_INTENTION, and RCMDTN_INTENTION to compute visit_time_total_min, visit_satisfaction_avg, and revisit_intention_rate per TRAVEL_ID from TL_csv/tn_visit_area_info.
     # 방문지 정보를 불러와 복사본으로 전처리를 진행합니다.
 
     df = load_dataset(dataset_key).copy()

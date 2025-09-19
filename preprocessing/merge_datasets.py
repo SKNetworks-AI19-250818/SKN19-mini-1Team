@@ -256,6 +256,10 @@ def build_final_dataset():
     travel_features = travel_features.merge(visit_summary_ready, on="TRAVEL_ID", how="left")
 
     # 숫자형 컬럼은 기본값을 0으로 채워 연산에서 NaN이 생기지 않도록 한다.
+    # PLAN: swap this blanket zero fill for persona/purpose medians pulled from
+    # data/training/TL_csv source tables via preprocessing/preprocessing.py helpers.
+    # e.g., use activity/lodging aggregations to impute missing rows with ~9.7e4 activity sum,
+    # 4 activity count, 8 history rows, and ~1.2e5 lodging sum per TRAVEL_PERSONA before falling back to 0.
     numeric_fill_zero = [
         "activity_payment_sum",
         "activity_payment_count",
