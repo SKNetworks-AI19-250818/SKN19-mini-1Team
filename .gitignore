@@ -8,3 +8,12 @@ VL_gps_data/
 
 # image file
 *.png
+
+# pycache
+preprocessing/__pycache__/
+
+# codex
+AGENTS.md
+
+# 환경변수
+.env
