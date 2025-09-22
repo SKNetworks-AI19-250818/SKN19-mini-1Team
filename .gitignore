@@ -6,8 +6,8 @@ VL_gps_data/
 # MAC os default file
 .DS_Store
 
-# image file
-*.png
+# # image file
+# *.png
 
 # pycache
 preprocessing/__pycache__/
