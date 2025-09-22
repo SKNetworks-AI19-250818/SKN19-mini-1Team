@@ -6,35 +6,35 @@
   <tr>
     <td align="center">
       <strong>강지완</strong><br><br>
-      <img src="https://avatars.githubusercontent.com/Maroco0109" alt="강지완" width="140"><br>
+      <img src="assets/img/강지완.png" alt="강지완" width="140"><br>
       <a href="https://github.com/Maroco0109">
         <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="강지완 GitHub" width="32">
       </a>
     </td>
     <td align="center">
       <strong>김성욱</strong><br><br>
-      <img src="https://avatars.githubusercontent.com/souluk319" alt="김성욱" width="140"><br>
+      <img src="assets/img/김성욱.png" alt="김성욱" width="140"><br>
       <a href="https://github.com/souluk319">
         <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="김성욱 GitHub" width="32">
       </a>
     </td>
     <td align="center">
       <strong>김소희</strong><br><br>
-      <img src="https://avatars.githubusercontent.com/sosodoit" alt="김소희" width="140"><br>
+      <img src="assets/img/김소희.png" alt="김소희" width="140"><br>
       <a href="https://github.com/sosodoit">
         <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="김소희 GitHub" width="32">
       </a>
     </td>
     <td align="center">
       <strong>박진형</strong><br><br>
-      <img src="https://avatars.githubusercontent.com/vispi94" alt="박진형" width="140"><br>
+      <img src="assets/img/박진형.png" alt="박진형" width="140"><br>
       <a href="https://github.com/vispi94">
         <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="박진형 GitHub" width="32">
       </a>
     </td>
     <td align="center">
       <strong>이상민</strong><br><br>
-      <img src="https://avatars.githubusercontent.com/ChocolateStrawberryYumYum" alt="이상민" width="140"><br>
+      <img src="assets/img/이상민.png" alt="이상민" width="140"><br>
       <a href="https://github.com/ChocolateStrawberryYumYum">
         <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="이상민 GitHub" width="32">
       </a>
@@ -84,6 +84,7 @@
   │ │ └── 활동소비내역_전처리.ipynb
   ├── assets/
   │ └──img/
+  │ │ └── *.png
   ├── ppt/
   │ ├── 발표자료.pptx
   │ └── 슬라이드\*.JPG
@@ -174,7 +175,7 @@
 <details>
 <summary>브랜딩도 결과의 일부! 포스터·팀 캐릭터로 메시지 명확화</summary>
 
-- 만든이의 한마디 `by 김성욱`
+- 팀에 보탬이 되고자 떠오르는 아이디어들을 메모해 두었고 밈과 버무려 포스터를제작 해보았습니다. 팀원들이 재미있게 생각해주셔서 감사했습니다!  `by 김성욱`
 
 ---
 
