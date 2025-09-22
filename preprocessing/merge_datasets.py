@@ -7,7 +7,6 @@ from collections import Counter
 
 
 def get_project_root():
-    """Return absolute path to the project root directory."""
     # 현재 파일이 있는 폴더에서 한 단계 위로 올라가 프로젝트 루트를 찾는다.
     here = os.path.dirname(__file__)
     # 절대 경로로 변환해 어느 위치에서 실행해도 같은 폴더를 가리키게 한다.
@@ -15,14 +14,12 @@ def get_project_root():
 
 
 def get_preprocessed_dir():
-    """Return the folder where preprocessed CSV files are stored."""
     # 프로젝트 루트 아래 data/training/preprocessing 경로를 조합한다.
     root = get_project_root()
     return os.path.join(root, "data", "training", "preprocessing")
 
 
 def read_preprocessed_csv(filename):
-    """Load a preprocessed CSV file by name."""
     # 전처리 결과가 저장된 폴더 위치를 구한다.
     folder = get_preprocessed_dir()
     path = os.path.join(folder, filename)
@@ -34,7 +31,6 @@ def read_preprocessed_csv(filename):
 
 
 def aggregate_activity_consumption(df):
-    """Summarise activity consumption data per travel."""
     columns = ["TRAVEL_ID", "activity_payment_sum", "activity_payment_count", "activity_store_count"]
     if df.empty:
         # 입력 데이터가 비어 있으면 같은 형태의 빈 표를 반환해 후속 로직을 단순화한다.
@@ -64,7 +60,6 @@ def aggregate_activity_consumption(df):
 
 
 def aggregate_activity_history(df):
-    """Summarise activity history counts per travel."""
     if df.empty:
         # 빈 입력이 들어오면 동일한 컬럼 구조의 빈 결과를 돌려준다.
         return pd.DataFrame(columns=["TRAVEL_ID", "activity_history_rows", "activity_type_unique"])
@@ -78,7 +73,6 @@ def aggregate_activity_history(df):
 
 
 def aggregate_lodging(df):
-    """Summarise lodging consumption data per travel."""
     columns = ["TRAVEL_ID", "lodging_payment_sum", "lodging_payment_count", "lodging_store_count"]
     if df.empty:
         # 숙박 결제 데이터가 없으면 같은 모양의 빈 결과를 돌려 후속 과정에서 예외를 막는다.
@@ -106,7 +100,6 @@ def aggregate_lodging(df):
 
 
 def prepare_visit_summary(df):
-    """Rename visit-area summary columns to consistent feature names."""
     if df.empty:
         # 방문 요약 데이터가 없으면 필요한 컬럼 이름만 유지한 빈 표를 반환한다.
         columns = [
@@ -134,7 +127,6 @@ def prepare_visit_summary(df):
 
 
 def load_file_map():
-    """Load the original CSV path mapping from file_dir.json."""
     # 전처리 이전 데이터 위치 정보를 담은 JSON 파일을 읽어 온다.
     here = os.path.dirname(__file__)
     json_path = os.path.join(here, "file_dir.json")
@@ -152,7 +144,6 @@ def load_file_map():
 
 
 def load_travel_table():
-    """Load the travel table, preferring the preprocessed version if available."""
     # 이미 저장된 전처리 결과가 있으면 그 파일을 사용한다.
     preprocessed_path = os.path.join(get_preprocessed_dir(), "travel.csv")
     if os.path.exists(preprocessed_path):
@@ -167,7 +158,6 @@ def load_travel_table():
 
 
 def _extract_codes(value, delimiter=";"):
-    """Split a delimited string into a list of codes."""
     # 값이 비어 있으면 빈 리스트를 반환해 이후 로직이 단순해지도록 한다.
     if pd.isna(value):
         return []
@@ -181,7 +171,6 @@ def _extract_codes(value, delimiter=";"):
 
 
 def expand_multi_value_column(df, column, prefix, delimiter=";", top_n=10):
-    """Expand a multi-value column into indicator columns for the most common codes."""
     if column not in df.columns:
         # 기대한 컬럼이 없으면 원본 데이터를 그대로 돌려준다.
         return df
@@ -211,7 +200,6 @@ def expand_multi_value_column(df, column, prefix, delimiter=";", top_n=10):
 
 
 def expand_travel_categorical_codes(travel_df):
-    """Expand multi-value categorical columns in the travel table."""
     # 여행 목적과 미션 체크처럼 여러 값이 들어 있는 문자열을 개별 열로 확장한다.
     travel_df = expand_multi_value_column(travel_df, "TRAVEL_PURPOSE", "TRAVEL_PURPOSE_", ";")
 
@@ -231,7 +219,6 @@ def expand_travel_categorical_codes(travel_df):
 
 
 def build_final_dataset():
-    """Combine all preprocessed tables into a single traveler-level dataset."""
     # 미리 전처리해 둔 CSV 파일들을 모두 불러온다.
     activity_consumption = read_preprocessed_csv("activity_consumption.csv")
     activity_history = read_preprocessed_csv("activity_history.csv")
@@ -303,7 +290,6 @@ def build_final_dataset():
 
 
 def save_final_dataset():
-    """Build the final dataset and save it to disk."""
     # 최종 데이터프레임을 만들고 전처리 폴더에 CSV로 저장한다.
     df = build_final_dataset()
     output_dir = get_preprocessed_dir()
