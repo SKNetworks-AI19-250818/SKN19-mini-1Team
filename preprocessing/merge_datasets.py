@@ -13,24 +13,28 @@ def get_project_root():
     return os.path.abspath(os.path.join(here, ".."))
 
 
-def get_preprocessed_dir():
-    # 프로젝트 루트 아래 data/training/preprocessing 경로를 조합한다.
+def get_preprocessed_dir(mode="train"):
+    # 프로젝트 루트 아래 mode에 맞는 경로를 조합한다.
     root = get_project_root()
+    if mode == "validation":
+        return os.path.join(root, "data", "validation", "preprocessing")
     return os.path.join(root, "data", "training", "preprocessing")
 
-def get_final_dir():
-    # 프로젝트 루트 아래 data/training/final 경로를 조합한다.
+def get_final_dir(mode="train"):
+    # 프로젝트 루트 아래 mode에 맞는 경로를 조합한다.
     root = get_project_root()
+    if mode == "validation":
+        return os.path.join(root, "data", "validation", "final")
     return os.path.join(root, "data", "training", "final")
 
 
-def read_preprocessed_csv(filename):
-    # 전처리 결과가 저장된 폴더 위치를 구한다.
-    folder = get_preprocessed_dir()
+def read_preprocessed_csv(filename, mode="train"):
+    # 전처리 결과가 저장된 폴더 위치를 mode에 따라 구한다.
+    folder = get_preprocessed_dir(mode)
     path = os.path.join(folder, filename)
     # 파일이 없다면 바로 알려주어 후속 과정에서 헛수고하지 않도록 한다.
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Missing preprocessed file: {path}")
+        raise FileNotFoundError(f"Missing preprocessed file: {path}. Please run the --preprocess step first for the '{mode}' dataset.")
     # pandas가 CSV를 읽어 데이터프레임으로 만들어 준다.
     return pd.read_csv(path)
 
@@ -130,11 +134,16 @@ def prepare_visit_summary(df):
     result = df.rename(columns=rename_map)
     return result
 
-
-def load_file_map():
+# This function is not used by load_travel_table anymore but kept for potential other uses
+def load_file_map(mode="train"):
     # 전처리 이전 데이터 위치 정보를 담은 JSON 파일을 읽어 온다.
     here = os.path.dirname(__file__)
-    json_path = os.path.join(here, "file_dir.json")
+    if mode == "validation":
+        file_name = "file_dir_validation.json"
+    else:
+        file_name = "file_dir.json"
+
+    json_path = os.path.join(here, file_name)
     if not os.path.exists(json_path):
         raise FileNotFoundError(f"Cannot find mapping file: {json_path}")
     with open(json_path, encoding="utf-8") as handle:
@@ -148,18 +157,9 @@ def load_file_map():
     return file_map
 
 
-def load_travel_table():
-    # 이미 저장된 전처리 결과가 있으면 그 파일을 사용한다.
-    preprocessed_path = os.path.join(get_preprocessed_dir(), "travel.csv")
-    if os.path.exists(preprocessed_path):
-        return pd.read_csv(preprocessed_path)
-
-    # 없으면 원본 데이터를 찾아 TRAVEL_MISSION 컬럼을 제거한 뒤 돌려준다.
-    file_map = load_file_map()
-    if "?�행" not in file_map:
-        raise KeyError("'?�행' key is missing from file_dir.json")
-    travel_path = file_map["?�행"]
-    return pd.read_csv(travel_path).drop(columns=["TRAVEL_MISSION"], errors="ignore")
+def load_travel_table(mode="train"):
+    # 전처리된 travel.csv 파일을 읽는 것이 주 목적
+    return read_preprocessed_csv("travel.csv", mode)
 
 
 def _extract_codes(value, delimiter=";"):
@@ -215,13 +215,13 @@ def expand_travel_categorical_codes(travel_df):
     return travel_df
 
 
-def build_final_dataset():
+def build_final_dataset(mode="train"):
     # 미리 전처리해 둔 CSV 파일들을 모두 불러온다.
-    activity_consumption = read_preprocessed_csv("activity_consumption.csv")
-    activity_history = read_preprocessed_csv("activity_history.csv")
-    lodging = read_preprocessed_csv("lodging_consumption.csv")
-    traveller_master = read_preprocessed_csv("traveller_master.csv")
-    visit_summary = read_preprocessed_csv("visit_area_summary.csv")
+    activity_consumption = read_preprocessed_csv("activity_consumption.csv", mode=mode)
+    activity_history = read_preprocessed_csv("activity_history.csv", mode=mode)
+    lodging = read_preprocessed_csv("lodging_consumption.csv", mode=mode)
+    traveller_master = read_preprocessed_csv("traveller_master.csv", mode=mode)
+    visit_summary = read_preprocessed_csv("visit_area_summary.csv", mode=mode)
 
     # 각 테이블에서 여행 단위로 필요한 요약 통계를 만든다.
     activity_consume_summary = aggregate_activity_consumption(activity_consumption)
@@ -230,7 +230,7 @@ def build_final_dataset():
     visit_summary_ready = prepare_visit_summary(visit_summary)
 
     # 여행 기본 정보에 파생된 통계를 차례대로 붙인다.
-    travel_table = load_travel_table()
+    travel_table = load_travel_table(mode=mode)
     travel_table = expand_travel_categorical_codes(travel_table)
 
     travel_features = travel_table.copy()
@@ -294,10 +294,16 @@ def build_final_dataset():
     return final_df
 
 
-def save_final_dataset():
-    # 최종 데이터프레임을 만들고 전처리 폴더에 CSV로 저장한다.
-    df = build_final_dataset()
-    output_dir = get_final_dir()
+def save_final_dataset(mode="train", output_dir=None):
+    # 최종 데이터프레임을 만들고 지정된 폴더에 CSV로 저장한다.
+    df = build_final_dataset(mode=mode)
+    
+    # If output_dir is not provided, use the default based on mode
+    if output_dir is None:
+        output_dir = get_final_dir(mode=mode)
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
     output_path = os.path.join(output_dir, "travel_insight.csv")
     df.to_csv(output_path, index=False)
     return output_path
@@ -305,5 +311,6 @@ def save_final_dataset():
 
 if __name__ == "__main__":
     # 스크립트를 직접 실행하면 저장 경로를 확인할 수 있다.
-    path = save_final_dataset()
-    print(f"Saved merged dataset to {path}")
+    # Default to saving the training dataset if run directly.
+    path = save_final_dataset(mode="train")
+    print(f"Saved merged training dataset to {path}")
