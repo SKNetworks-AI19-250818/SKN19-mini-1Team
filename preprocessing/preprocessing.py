@@ -2,6 +2,7 @@ import io
 import json
 import os
 
+
 import numpy as np
 import pandas as pd
 
@@ -228,35 +229,103 @@ def preprocess_lodging_consumption(
     return df, encoders
 
 
+
+def get_sido_code_map():
+    """
+    JSON 파일을 읽어 SIDO_NM을 SSG_CD1로 매핑하는 딕셔너리를 생성합니다.
+    다양한 형태의 축약된 지명도 처리합니다.
+    """
+    json_path = os.path.join(_project_root, "data", "tag_code", "training", "json", "tc_sgg_시군구코드.json")
+    
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    sido_map = {}
+    # JSON 파일에서 중복을 제거한 {SIDO_NM: SGG_CD1} 맵을 먼저 생성
+    unique_sido = {item['SIDO_NM']: item['SGG_CD1'] for item in data if item.get('SIDO_NM')}
+
+    for sido_nm, sgg_cd1 in unique_sido.items():
+        # 원본 이름 추가 (예: "서울특별시")
+        sido_map[sido_nm] = sgg_cd1
+        
+        # 일반적인 축약어 추가 (예: "서울", "경기")
+        if '특별시' in sido_nm:
+            sido_map[sido_nm.replace('특별시', '')] = sgg_cd1
+        if '광역시' in sido_nm:
+            sido_map[sido_nm.replace('광역시', '')] = sgg_cd1
+        if '특별자치시' in sido_nm:
+             sido_map[sido_nm.replace('특별자치시', '')] = sgg_cd1
+        if sido_nm.endswith('도'):
+            sido_map[sido_nm[:-1]] = sgg_cd1
+
+    # 요청하신 특정 축약어와 전체 이름 매핑
+    sido_map['충남'] = unique_sido.get('충청남도')
+    sido_map['충북'] = unique_sido.get('충청북도')
+    sido_map['경남'] = unique_sido.get('경상남도')
+    sido_map['경북'] = unique_sido.get('경상북도')
+    sido_map['전남'] = unique_sido.get('전라남도')
+    sido_map['전북'] = unique_sido.get('전라북도')
+
+    return sido_map
+
 def preprocess_traveller_master(dataset_key="여행객_Master"):
-    """Clean the traveller master table."""
-    # PLAN: map INCOME, HOUSE_INCOME, TRAVEL_TERM, and TRAVEL_NUM codes to numeric midpoints so we can add traveller_income_midpt, traveller_house_income_midpt, and travel_freq_per_year features.
-    # 여행객 기본 정보를 불러와 복사본으로 정리합니다.
-
+    """
+    여행객 Master 테이블을 전처리하고, 거주지 및 목적지 컬럼을 SGG_CD1 코드로 변환합니다.
+    """
     df = load_dataset(dataset_key).copy()
-    drop_columns = []
-    # 사용 빈도가 낮은 열을 모아 삭제 목록에 추가합니다.
+    sido_code_map = get_sido_code_map()
+    
+    # 긴 이름부터 찾도록 키를 정렬 ('경상남도'가 '경남'보다 먼저 매칭되도록)
+    sorted_sido_keys = sorted(sido_code_map.keys(), key=len, reverse=True)
 
-    for column in ["JOB_ETC", "EDU_FNSH_SE"]:
-        if column in df.columns:
-            drop_columns.append(column)
-    if drop_columns:
-        # 모아둔 열을 한 번에 삭제해 표를 간결하게 만듭니다.
+    def get_code_from_text(text):
+        """문자열에서 지역명 키를 찾아 코드를 반환하는 함수"""
+        if not isinstance(text, str):
+            return None
+        for key in sorted_sido_keys:
+            if key in text:
+                return sido_code_map[key]
+        return None
 
-        df = df.drop(columns=drop_columns)
+    # TRAVEL_STATUS_RESIDENCE 컬럼 변환
+    if "TRAVEL_STATUS_RESIDENCE" in df.columns:
+        df["TRAVEL_STATUS_RESIDENCE_CODE"] = (
+            df["TRAVEL_STATUS_RESIDENCE"].apply(get_code_from_text)
+            .fillna(0)
+            .astype(int)
+        )
+
+    # TRAVEL_STATUS_DESTINATION 컬럼 변환
+    if "TRAVEL_STATUS_DESTINATION" in df.columns:
+        df["TRAVEL_STATUS_DESTINATION_CODE"] = (
+            df["TRAVEL_STATUS_DESTINATION"].apply(get_code_from_text)
+            .fillna(0)
+            .astype(int)
+        )
+
+    # Columns to drop as requested by user and for cleaning
+    drop_columns = ["TRAVEL_STATUS_YMD"] + [f"TRAVEL_STYLE_{i}" for i in range(1, 9)]
+    drop_columns.extend(["JOB_ETC", "EDU_FNSH_SE"])
+
+    # Drop all collected columns at once
+    df = df.drop(columns=drop_columns, errors="ignore")
 
     # 가구소득이 비어 있다면 중앙값으로 채워 극단값 영향을 줄입니다.
-
     if "HOUSE_INCOME" in df.columns:
         df["HOUSE_INCOME"] = df["HOUSE_INCOME"].fillna(df["HOUSE_INCOME"].median())
+        
     # 보조 여행 동기가 없으면 0으로 채워 의미를 명확히 합니다.
-
     for column in ["TRAVEL_MOTIVE_2", "TRAVEL_MOTIVE_3"]:
         if column in df.columns:
             df[column] = df[column].fillna(0)
+            
+    # TRAVEL_STYL_1 부터 TRAVEL_STYL_7 까지의 컬럼명을 리스트로 생성
+    style_columns_to_drop = [f"TRAVEL_STYL_{i}" for i in range(1, 8)]
+    
+    # 해당 컬럼들을 데이터프레임에서 삭제 (없는 컬럼이 있더라도 오류 발생 방지)
+    df.drop(columns=style_columns_to_drop, inplace=True, errors='ignore')
 
     # 정리된 표의 인덱스를 재정렬하고 결과를 반환합니다.
-
     return df.reset_index(drop=True)
 
 
@@ -266,110 +335,79 @@ def preprocess_visit_area_info(
     drop_columns=None,
     return_base_table=False,
 ):
-    """Create per-travel aggregates from the visit area table."""
-    # PLAN: reuse RESIDENCE_TIME_MIN plus DGSTFN, REVISIT_INTENTION, and RCMDTN_INTENTION to compute visit_time_total_min, visit_satisfaction_avg, and revisit_intention_rate per TRAVEL_ID from TL_csv/tn_visit_area_info.
-    # 방문지 정보를 불러와 복사본으로 전처리를 진행합니다.
-
+    """
+    방문지 정보 테이블에서 여행 단위의 요약 통계를 생성합니다.
+    - 제외 코드에 해당하는 방문지를 제외하고, 각 방문지의 실패 여부를 계산합니다.
+    - 실패한 방문지 비율이 50% 이상인 여행을 '실패한 여행'으로 정의합니다.
+    """
+    # 1. 원본 데이터 로드 및 기본 전처리
     df = load_dataset(dataset_key).copy()
-
-    # 분석에 필요 없는 상세 위치 정보 등을 기본으로 제거합니다.
-
     default_drop = [
-        "ROAD_NM_ADDR",
-        "LOTNO_ADDR",
-        "X_COORD",
-        "Y_COORD",
-        "ROAD_NM_CD",
-        "LOTNO_CD",
-        "POI_ID",
-        "POI_NM",
-        "RESIDENCE_TIME_MIN",
-        "VISIT_CHC_REASON_CD",
-        "LODGING_TYPE_CD",
-        "SGG_CD",
+        "ROAD_NM_ADDR", "LOTNO_ADDR", "X_COORD", "Y_COORD", "ROAD_NM_CD",
+        "LOTNO_CD", "POI_ID", "POI_NM", "RESIDENCE_TIME_MIN",
+        "LODGING_TYPE_CD", "SGG_CD",
     ]
-    # 기본 목록을 복사해 실제로 제거할 열 리스트를 만듭니다.
-
     columns_to_drop = list(default_drop)
     if drop_columns:
         for column in drop_columns:
             if column not in columns_to_drop:
                 columns_to_drop.append(column)
-    # 준비된 목록에 따라 열을 삭제해 표를 단순화합니다.
-
     df = df.drop(columns=columns_to_drop, errors="ignore")
-
-    # 방문 시작/종료일을 날짜 형식으로 변환해 계산이 가능하게 합니다.
 
     for column in ["VISIT_START_YMD", "VISIT_END_YMD"]:
         if column in df.columns:
             df[column] = pd.to_datetime(df[column], errors="coerce")
 
-    filtered = df
+    # 각 만족도 항목이 3점 이하인지 여부를 boolean(True/False) 값으로 계산합니다.
+    # (True는 1, False는 0으로 취급됩니다.)
+    low_dgstfn = (df['DGSTFN'] <= 3)
+    low_revisit = (df['REVISIT_INTENTION'] <= 3)
+    low_rcmdtn = (df['RCMDTN_INTENTION'] <= 3)
+
+    # 위 세 boolean 값을 더하면, 3점 이하인 항목의 개수가 됩니다.
+    # 그 합이 2 이상이면 '실패한 방문지' 조건에 해당합니다.
+    fail_visit_condition = (low_dgstfn + low_revisit + low_rcmdtn) >= 2
+    
+    df['IS_FAILED_VISIT'] = np.where(fail_visit_condition, 1, 0)
+
+    # VISIT_AREA_TYPE_CD가 exclude_codes에 해당하는 경우는 계산에서 제외합니다.
     if "VISIT_AREA_TYPE_CD" in df.columns:
-        # 분석에서 제외할 방문 유형 코드는 미리 걸러냅니다.
+        df.loc[df['VISIT_AREA_TYPE_CD'].isin(set(exclude_codes)), 'IS_FAILED_VISIT'] = np.nan
 
-        filtered = df[~df["VISIT_AREA_TYPE_CD"].isin(set(exclude_codes))].copy()
-
-    # 여행 단위로 계산한 통계들을 모아둘 리스트입니다.
-
+    # 2. 여행 단위(TRAVEL_ID)로 통계 집계
     parts = []
-
+    filtered = df[~df["VISIT_AREA_TYPE_CD"].isin(set(exclude_codes))].copy()
     if not filtered.empty:
-        if "DGSTFN" in filtered.columns:
-            # 여행별 만족도 평균을 계산합니다.
+        parts.append(filtered.groupby("TRAVEL_ID")["DGSTFN"].mean().rename("DGSTFN_AVG"))
+        parts.append(filtered.groupby("TRAVEL_ID")["REVISIT_INTENTION"].mean().rename("REVISIT_AVG"))
+        parts.append(filtered.groupby("TRAVEL_ID")["RCMDTN_INTENTION"].mean().rename("RCMDTN_AVG"))
 
-            parts.append(filtered.groupby("TRAVEL_ID")["DGSTFN"].mean().rename("DGSTFN_AVG"))
-        if "REVISIT_INTENTION" in filtered.columns:
-            # 재방문 의향 평균을 계산합니다.
+    failed_ratio = df.groupby('TRAVEL_ID')['IS_FAILED_VISIT'].mean().rename('FAILED_VISIT_RATIO')
+    parts.append(failed_ratio)
 
-            parts.append(filtered.groupby("TRAVEL_ID")["REVISIT_INTENTION"].mean().rename("REVISIT_AVG"))
-        if "RCMDTN_INTENTION" in filtered.columns:
-            # 추천 의향 평균을 계산합니다.
+    if {"VISIT_START_YMD", "VISIT_END_YMD"}.issubset(df.columns):
+        trip_days = df.groupby("TRAVEL_ID").apply(
+            lambda x: (x["VISIT_END_YMD"].max() - x["VISIT_START_YMD"].min()).days + 1
+            if x["VISIT_START_YMD"].notna().any() and x["VISIT_END_YMD"].notna().any()
+            else np.nan
+        ).rename("TRIP_DAYS")
+        parts.append(trip_days)
+    if "VISIT_AREA_NM" in df.columns:
+        move_count = df.groupby("TRAVEL_ID")["VISIT_AREA_NM"].count().rename("MOVE_CNT")
+        parts.append(move_count)
 
-            parts.append(filtered.groupby("TRAVEL_ID")["RCMDTN_INTENTION"].mean().rename("RCMDTN_AVG"))
+    aggregated = pd.concat(parts, axis=1).reset_index()
+    aggregated['FAILED_VISIT_RATIO'] = aggregated['FAILED_VISIT_RATIO'].fillna(0)
 
-        if {"VISIT_START_YMD", "VISIT_END_YMD"}.issubset(df.columns):
-            # 여행 기간(일수)을 계산해 추가합니다.
+    # (ii 조건) 최종 여행 실패/성공 여부 컬럼 생성
+    aggregated['IS_FAILED_TRIP'] = np.where(aggregated['FAILED_VISIT_RATIO'] >= 0.5, 1, 0)
 
-            trip_days = df.groupby("TRAVEL_ID").apply(
-                lambda x: (x["VISIT_END_YMD"].max() - x["VISIT_START_YMD"].min()).days + 1
-                if x["VISIT_START_YMD"].notna().any() and x["VISIT_END_YMD"].notna().any()
-                else np.nan
-            ).rename("TRIP_DAYS")
-            parts.append(trip_days)
-
-        if "VISIT_AREA_NM" in filtered.columns:
-            # 방문한 장소 수를 계산해 이동 횟수 지표로 활용합니다.
-
-            move_count = filtered.groupby("TRAVEL_ID")["VISIT_AREA_NM"].count().rename("MOVE_CNT")
-            parts.append(move_count)
-
-        if "REVISIT_YN" in filtered.columns:
-            # 'Y' 비율로 재방문 경험 비중을 구합니다.
-
-            def visit_rate(series):
-                total = len(series)
-                if total == 0:
-                    return np.nan
-                return (series.astype(str).str.upper() == "Y").sum() / total
-
-            rate = filtered.groupby("TRAVEL_ID")["REVISIT_YN"].apply(visit_rate).rename("VISIT_RATE")
-            parts.append(rate)
-
-    # 계산된 통계를 하나의 표로 합칩니다.
-
-    if parts:
-        aggregated = pd.concat(parts, axis=1).reset_index()
-    else:
-        aggregated = pd.DataFrame(
-            columns=["TRAVEL_ID", "DGSTFN_AVG", "REVISIT_AVG", "RCMDTN_AVG", "TRIP_DAYS", "MOVE_CNT", "VISIT_RATE"]
-        )
+    # 최종 결과에는 중간 계산 과정 컬럼을 제외합니다.
+    aggregated = aggregated.drop(columns=['FAILED_VISIT_RATIO'])
 
     if return_base_table:
-        # 전처리된 원본 표와 요약 표를 함께 반환할 수도 있습니다.
+        return df.drop(columns=['IS_FAILED_VISIT']).reset_index(drop=True), aggregated
 
-        return df.reset_index(drop=True), aggregated
     return aggregated
 
 
@@ -428,7 +466,9 @@ def save_lodging_consumption(output_dir=None, **preprocess_kwargs):
     data_path = save_dataframe(df, "lodging_consumption.csv", output_dir)
     if encoders:
         folder = ensure_preprocessing_dir(output_dir)
-        encoder_path = os.path.join(folder, "lodging_encoders.json")
+        json_dir = os.path.join(folder, "json")
+        os.makedirs(json_dir, exist_ok=True)
+        encoder_path = os.path.join(json_dir, "travel_status_accompany_encoding.json")
         with open(encoder_path, "w", encoding="utf-8") as handle:
             json.dump(_encode_mapping_for_json(encoders), handle, ensure_ascii=False, indent=2)
     return data_path
@@ -447,6 +487,14 @@ def save_travel_table(output_dir=None, dataset_key="여행"):
     # TRAVEL_MISSION is identical to TRAVEL_PURPOSE, so drop to avoid duplication
     if "TRAVEL_MISSION" in df.columns:
         df = df.drop(columns=["TRAVEL_MISSION"], errors="ignore")
+        
+    # MVMN_NM 컬럼이 존재하면, 결측치(NaN)를 "정보없음" 텍스트로 채웁니다.
+    if "MVMN_NM" in df.columns:
+        df["MVMN_NM"] = df["MVMN_NM"].fillna("정보없음")
+    
+    # TRAVEL_NM 컬럼 삭제
+    if "TRAVEL_NM" in df.columns:
+        df = df.drop(columns=["TRAVEL_NM"], errors="ignore")
 
     # write the cleaned version for downstream merges/EDA
     return save_dataframe(df, "travel.csv", output_dir)

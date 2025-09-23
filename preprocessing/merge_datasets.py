@@ -18,6 +18,11 @@ def get_preprocessed_dir():
     root = get_project_root()
     return os.path.join(root, "data", "training", "preprocessing")
 
+def get_final_dir():
+    # 프로젝트 루트 아래 data/training/final 경로를 조합한다.
+    root = get_project_root()
+    return os.path.join(root, "data", "training", "final")
+
 
 def read_preprocessed_csv(filename):
     # 전처리 결과가 저장된 폴더 위치를 구한다.
@@ -203,14 +208,6 @@ def expand_travel_categorical_codes(travel_df):
     # 여행 목적과 미션 체크처럼 여러 값이 들어 있는 문자열을 개별 열로 확장한다.
     travel_df = expand_multi_value_column(travel_df, "TRAVEL_PURPOSE", "TRAVEL_PURPOSE_", ";")
 
-    travel_df = expand_multi_value_column(
-        travel_df,
-        "TRAVEL_MISSION_CHECK",
-        "TRAVEL_MISSION_CHECK_",
-        ";",
-        top_n=10,
-    )
-
     # 확장 과정에서 값이 비어도 오류가 나지 않도록 기본값 0을 채워 둔다.
     travel_df["TRAVEL_PURPOSE_COUNT"] = travel_df.get("TRAVEL_PURPOSE_COUNT", 0)
     travel_df["TRAVEL_PURPOSE_OTHER"] = travel_df.get("TRAVEL_PURPOSE_OTHER", 0)
@@ -242,18 +239,21 @@ def build_final_dataset():
     travel_features = travel_features.merge(lodging_summary, on="TRAVEL_ID", how="left")
     travel_features = travel_features.merge(visit_summary_ready, on="TRAVEL_ID", how="left")
 
+    # activity_payment_sum과 lodging_payment_sum의 결측치를 중앙값으로 채웁니다.
+    if "activity_payment_sum" in travel_features.columns:
+        activity_median = travel_features["activity_payment_sum"].median()
+        travel_features["activity_payment_sum"] = travel_features["activity_payment_sum"].fillna(activity_median)
+
+    if "lodging_payment_sum" in travel_features.columns:
+        lodging_median = travel_features["lodging_payment_sum"].median()
+        travel_features["lodging_payment_sum"] = travel_features["lodging_payment_sum"].fillna(lodging_median)
+
     # 숫자형 컬럼은 기본값을 0으로 채워 연산에서 NaN이 생기지 않도록 한다.
-    # PLAN: swap this blanket zero fill for persona/purpose medians pulled from
-    # data/training/TL_csv source tables via preprocessing/preprocessing.py helpers.
-    # e.g., use activity/lodging aggregations to impute missing rows with ~9.7e4 activity sum,
-    # 4 activity count, 8 history rows, and ~1.2e5 lodging sum per TRAVEL_PERSONA before falling back to 0.
     numeric_fill_zero = [
-        "activity_payment_sum",
         "activity_payment_count",
         "activity_store_count",
         "activity_history_rows",
         "activity_type_unique",
-        "lodging_payment_sum",
         "lodging_payment_count",
         "lodging_store_count",
     ]
@@ -286,14 +286,19 @@ def build_final_dataset():
 
     # 마지막으로 여행자 기본 정보와 조인해 최종 데이터를 완성한다.
     final_df = travel_features.merge(traveller_master, on="TRAVELER_ID", how="left")
+
+    # TRAVELER_ID는 최종 데이터에서 제외한다.
+    if "TRAVELER_ID" in final_df.columns:
+        final_df = final_df.drop(columns=["TRAVELER_ID"])
+
     return final_df
 
 
 def save_final_dataset():
     # 최종 데이터프레임을 만들고 전처리 폴더에 CSV로 저장한다.
     df = build_final_dataset()
-    output_dir = get_preprocessed_dir()
-    output_path = os.path.join(output_dir, "final_traveler.csv")
+    output_dir = get_final_dir()
+    output_path = os.path.join(output_dir, "travel_insight.csv")
     df.to_csv(output_path, index=False)
     return output_path
 
