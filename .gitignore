@@ -1,7 +1,10 @@
 # gps 데이터 ignore (데이터셋 푸시 안되도록)
 TL_gps_data/
 VL_gps_data/
-# data/
+
+# 원본 데이터
+TL_csv
+VL_csv
 
 # MAC os default file
 .DS_Store
