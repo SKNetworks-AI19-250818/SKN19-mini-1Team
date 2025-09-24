@@ -331,8 +331,8 @@ def preprocess_traveller_master(dataset_key="여행객_Master", mode="train"):
         if column in df.columns:
             df[column] = df[column].fillna(0)
             
-    # TRAVEL_STYL_1 부터 TRAVEL_STYL_7 까지의 컬럼명을 리스트로 생성
-    style_columns_to_drop = [f"TRAVEL_STYL_{i}" for i in range(1, 8)]
+    # TRAVEL_STYL_1 부터 TRAVEL_STYL_8 까지의 컬럼명을 리스트로 생성
+    style_columns_to_drop = [f"TRAVEL_STYL_{i}" for i in range(1, 9)]
     
     # 해당 컬럼들을 데이터프레임에서 삭제 (없는 컬럼이 있더라도 오류 발생 방지)
     df.drop(columns=style_columns_to_drop, inplace=True, errors='ignore')
