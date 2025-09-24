@@ -273,3 +273,23 @@ python main.py merge --mode <MODE>
   ```bash
   python main.py merge --mode validation
   ```
+
+### 3. ML Preprocessing
+
+To run the ML-specific preprocessing on the final dataset for a specific mode, use the `ml` command. This will generate a `travel_ml.csv` file in the corresponding `data/<mode>/final/` directory.
+
+**Usage:**
+```bash
+python main.py ml --mode <MODE>
+```
+
+**Examples:**
+
+- Preprocess the training data for ML:
+  ```bash
+  python main.py ml --mode train
+  ```
+- Preprocess the validation data for ML:
+  ```bash
+  python main.py ml --mode validation
+  ```
