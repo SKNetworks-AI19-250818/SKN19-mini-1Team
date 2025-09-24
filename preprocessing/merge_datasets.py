@@ -127,6 +127,89 @@ def expand_travel_categorical_codes(travel_df):
     travel_df["TRAVEL_PURPOSE_OTHER"] = travel_df.get("TRAVEL_PURPOSE_OTHER", 0)
     return travel_df
 
+def _load_mis_codes(json_path):
+    """Load all numeric MIS codes (cd_b) from the given tag-code JSON.
+
+    Returns a list of strings sorted by numeric value, e.g., ["1", "2", ..., "26"].
+    Skips codes where cd_b is non-numeric or where del_flag indicates deletion.
+    """
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    codes = []
+    for item in data:
+        if item.get("cd_a") != "MIS":
+            continue
+        if str(item.get("del_flag", "N")).upper() == "Y":
+            continue
+        cd_b = str(item.get("cd_b", "")).strip()
+        if cd_b.isdigit():
+            codes.append(cd_b)
+
+    # sort numerically but keep as strings for consistent column names
+    codes = sorted(set(codes), key=lambda x: int(x))
+    return codes
+
+def _encode_mis_multi_hot(series: pd.Series, codes):
+    """Given a Series of semicolon-separated code strings, return a DataFrame of 0/1 per code.
+
+    - series: e.g., TRAVEL_PURPOSE or TRAVEL_MISSION_CHECK
+    - codes: list of string codes (e.g. ["1", "2", ...])
+    """
+    code_lists = series.apply(lambda x: set(_extract_codes(x, ";")) if not pd.isna(x) else set())
+    data = {}
+    for code in codes:
+        data[code] = code_lists.apply(lambda s: int(code in s))
+    return pd.DataFrame(data)
+
+def apply_mis_one_hot(final_df: pd.DataFrame) -> pd.DataFrame:
+    """Drop existing TRAVEL_PURPOSE_* encodings and append MIS-based one-hot columns for
+    TRAVEL_PURPOSE and TRAVEL_MISSION_CHECK to the rightmost side of the DataFrame.
+    """
+    df = final_df.copy()
+
+    # Prepare MIS codes from the tag-code JSON
+    json_path = os.path.join(
+        get_project_root(),
+        "data",
+        "tag_code",
+        "training",
+        "json",
+        "tc_codeb_코드B.json",
+    )
+    mis_codes = _load_mis_codes(json_path)
+
+    # 1) Drop previously encoded TRAVEL_PURPOSE_* columns (but keep the raw TRAVEL_PURPOSE)
+    to_drop = [
+        c
+        for c in df.columns
+        if c.startswith("TRAVEL_PURPOSE_") and c != "TRAVEL_PURPOSE"
+    ]
+    if to_drop:
+        df = df.drop(columns=to_drop)
+
+    # 2) Build and append new one-hot columns using MIS codes
+    if "TRAVEL_PURPOSE" in df.columns:
+        purpose_oh = _encode_mis_multi_hot(df["TRAVEL_PURPOSE"], mis_codes)
+        purpose_oh.columns = [f"TRAVEL_PURPOSE_CD_{c}" for c in mis_codes]
+    else:
+        purpose_oh = pd.DataFrame(index=df.index)
+
+    if "TRAVEL_MISSION_CHECK" in df.columns:
+        mission_oh = _encode_mis_multi_hot(df["TRAVEL_MISSION_CHECK"], mis_codes)
+        mission_oh.columns = [f"TRAVEL_MISSION_CHECK_CD_{c}" for c in mis_codes]
+    else:
+        mission_oh = pd.DataFrame(index=df.index)
+
+    # Ensure integer dtype (0/1)
+    for sub in (purpose_oh, mission_oh):
+        for col in sub.columns:
+            sub[col] = sub[col].astype(int)
+
+    # Concatenate to the right (appended columns appear at end)
+    df = pd.concat([df, purpose_oh, mission_oh], axis=1)
+    return df
+
 def build_final_dataset(mode="train"):
     # Load and concatenate data from all years
     activity_consumption = read_preprocessed_csv_for_all_years("activity_consumption.csv", mode=mode)
@@ -185,6 +268,9 @@ def build_final_dataset(mode="train"):
 
     # remove null
     final_df = final_df.dropna()
+
+    # After final merge: apply MIS-based one-hot encoding for TRAVEL_PURPOSE and TRAVEL_MISSION_CHECK
+    final_df = apply_mis_one_hot(final_df)
 
     return final_df
 
