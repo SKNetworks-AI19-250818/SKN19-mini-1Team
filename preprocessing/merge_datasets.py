@@ -266,6 +266,10 @@ def build_final_dataset(mode="train"):
     if "TRAVELER_ID" in final_df.columns:
         final_df = final_df.drop(columns=["TRAVELER_ID"])
 
+    # Drop unnecessary SGG columns
+    sgg_cols_to_drop = ["TRAVEL_LIKE_SGG_1", "TRAVEL_LIKE_SGG_2", "TRAVEL_LIKE_SGG_3"]
+    final_df = final_df.drop(columns=sgg_cols_to_drop, errors="ignore")
+
     # remove null
     final_df = final_df.dropna()
 

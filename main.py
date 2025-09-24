@@ -4,6 +4,7 @@ import os
 
 from preprocessing.preprocessing import save_all_preprocessed_data
 from preprocessing.merge_datasets import save_final_dataset
+from preprocessing.ML_preprocessing import run_ml_preprocessing
 
 
 def main():
@@ -24,16 +25,15 @@ def main():
     p_merge = subparsers.add_parser("merge", help="Merge preprocessed data from all years for a specific mode.")
     p_merge.add_argument("--mode", choices=["train", "validation"], required=True, dest="mode", help="Dataset mode to merge (train or validation).")
 
+    # ML Preprocessing command
+    p_ml = subparsers.add_parser("ml", help="Run ML preprocessing on the final validation dataset.")
+    p_ml.add_argument("--mode", choices=["train", "validation"], required=True, dest="mode", help="Dataset mode to preprocess (train or validation).")
+
     args = parser.parse_args()
 
-    # Map CLI mode argument to directory names
-    mode_to_dir = {
-        "train": "training",
-        "validation": "validation"
-    }
-    mode_dir_name = mode_to_dir[args.mode]
-
     if args.task == "preprocess":
+        mode_to_dir = {"train": "training", "validation": "validation"}
+        mode_dir_name = mode_to_dir[args.mode]
         year = args.year
         
         preprocess_output_dir = os.path.join("data", mode_dir_name, year, "preprocessing")
@@ -50,6 +50,8 @@ def main():
             sys.exit(1)
 
     elif args.task == "merge":
+        mode_to_dir = {"train": "training", "validation": "validation"}
+        mode_dir_name = mode_to_dir[args.mode]
         final_output_dir = os.path.join("data", mode_dir_name, "final")
         os.makedirs(final_output_dir, exist_ok=True)
         
@@ -60,6 +62,15 @@ def main():
             print(f"  - {final_path}")
         except Exception as e:
             print(f"An error occurred during merging: {e}", file=sys.stderr)
+            sys.exit(1)
+            
+    elif args.task == "ml":
+        print(f"Starting ML preprocessing for '{args.mode}' dataset...")
+        try:
+            output_path = run_ml_preprocessing(mode=args.mode)
+            print(f"ML preprocessing finished successfully. Output file: {output_path}")
+        except Exception as e:
+            print(f"An error occurred during ML preprocessing: {e}", file=sys.stderr)
             sys.exit(1)
 
 if __name__ == "__main__":
