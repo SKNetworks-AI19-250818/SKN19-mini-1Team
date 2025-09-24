@@ -378,8 +378,8 @@ def preprocess_visit_area_info(
     low_rcmdtn = (df['RCMDTN_INTENTION'] <= 3)
 
     # 위 세 boolean 값을 더하면, 3점 이하인 항목의 개수가 됩니다.
-    # 그 합이 2 이상이면 '실패한 방문지' 조건에 해당합니다.
-    fail_visit_condition = (low_dgstfn + low_revisit + low_rcmdtn) >= 2
+    # 그 합이 1 이상이면 '실패한 방문지' 조건에 해당합니다.
+    fail_visit_condition = (low_dgstfn + low_revisit + low_rcmdtn) >= 1
     
     df['IS_FAILED_VISIT'] = np.where(fail_visit_condition, 1, 0)
 
@@ -389,15 +389,35 @@ def preprocess_visit_area_info(
 
     # 2. 여행 단위(TRAVEL_ID)로 통계 집계
     parts = []
+    
+    # 만족도, 재방문/추천의향 평균 계산 (제외 코드 제외)
     filtered = df[~df["VISIT_AREA_TYPE_CD"].isin(set(exclude_codes))].copy()
     if not filtered.empty:
         parts.append(filtered.groupby("TRAVEL_ID")["DGSTFN"].mean().rename("DGSTFN_AVG"))
         parts.append(filtered.groupby("TRAVEL_ID")["REVISIT_INTENTION"].mean().rename("REVISIT_AVG"))
         parts.append(filtered.groupby("TRAVEL_ID")["RCMDTN_INTENTION"].mean().rename("RCMDTN_AVG"))
 
-    failed_ratio = df.groupby('TRAVEL_ID')['IS_FAILED_VISIT'].mean().rename('FAILED_VISIT_RATIO')
-    parts.append(failed_ratio)
+    # ------------------------------------------------------------------------------- #
+    # 타겟변수(IS_FAILED_TRIP) 작업 코드 (사용자 요청 로직 반영)
+    # ------------------------------------------------------------------------------- #
+    # IS_FAILED_VISIT가 NaN이 아닌, 즉 유효한(평가 대상인) 방문 기록만 필터링합니다.
+    valid_visits = df.dropna(subset=['IS_FAILED_VISIT'])
 
+    # 여행(TRAVEL_ID)별로 유효 방문지 수와 실패 방문지 수를 집계합니다.
+    trip_summary = valid_visits.groupby("TRAVEL_ID").agg(
+        visit_cnt=("VISIT_AREA_ID", "count"),
+        failed_trip=("IS_FAILED_VISIT", "sum")
+    )
+
+    # 전체 방문지 대비 실패 방문지 비율을 계산합니다.
+    trip_summary["failed_trip_rate"] = (trip_summary["failed_trip"] / trip_summary["visit_cnt"]).fillna(0)
+
+    # 실패 방문지 비율이 50% 이상이면 '실패한 여행'으로 정의합니다.
+    trip_summary["IS_FAILED_TRIP"] = (trip_summary["failed_trip_rate"] >= 0.5).astype(int)
+    parts.append(trip_summary["IS_FAILED_TRIP"])
+    # ------------------------------------------------------------------------------- #
+    
+    # 여행 기간(TRIP_DAYS) 및 이동 횟수(MOVE_CNT) 계산
     if {"VISIT_START_YMD", "VISIT_END_YMD"}.issubset(df.columns):
         trip_days = df.groupby("TRAVEL_ID").apply(
             lambda x: (x["VISIT_END_YMD"].max() - x["VISIT_START_YMD"].min()).days + 1
@@ -409,14 +429,12 @@ def preprocess_visit_area_info(
         move_count = df.groupby("TRAVEL_ID")["VISIT_AREA_NM"].count().rename("MOVE_CNT")
         parts.append(move_count)
 
+    # 집계된 모든 통계를 하나의 데이터프레임으로 합칩니다.
     aggregated = pd.concat(parts, axis=1).reset_index()
-    aggregated['FAILED_VISIT_RATIO'] = aggregated['FAILED_VISIT_RATIO'].fillna(0)
-
-    # (ii 조건) 최종 여행 실패/성공 여부 컬럼 생성
-    aggregated['IS_FAILED_TRIP'] = np.where(aggregated['FAILED_VISIT_RATIO'] >= 0.5, 1, 0)
-
-    # 최종 결과에는 중간 계산 과정 컬럼을 제외합니다.
-    aggregated = aggregated.drop(columns=['FAILED_VISIT_RATIO'])
+    
+    # 평가 대상 방문지가 없었던 여행의 경우, IS_FAILED_TRIP이 NaN으로 표시됩니다.
+    # 이 여행들은 실패하지 않은 것(0)으로 간주하여 결측치를 채웁니다.
+    aggregated['IS_FAILED_TRIP'] = aggregated['IS_FAILED_TRIP'].fillna(0).astype(int)
 
     if return_base_table:
         return df.drop(columns=['IS_FAILED_VISIT']).reset_index(drop=True), aggregated
