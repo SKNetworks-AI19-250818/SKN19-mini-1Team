@@ -3,8 +3,8 @@ TL_gps_data/
 VL_gps_data/
 
 # 원본 데이터
-TL_csv
-VL_csv
+# TL_csv
+# VL_csv
 
 # MAC os default file
 .DS_Store
