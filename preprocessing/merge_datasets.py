@@ -183,6 +183,9 @@ def build_final_dataset(mode="train"):
     if "TRAVELER_ID" in final_df.columns:
         final_df = final_df.drop(columns=["TRAVELER_ID"])
 
+    # remove null
+    final_df = final_df.dropna()
+
     return final_df
 
 def save_final_dataset(mode="train", output_dir=None):

@@ -321,6 +321,9 @@ def preprocess_traveller_master(dataset_key="여행객_Master", mode="train", ye
     # 해당 컬럼들을 데이터프레임에서 삭제 (없는 컬럼이 있더라도 오류 발생 방지)
     df.drop(columns=style_columns_to_drop, inplace=True, errors='ignore')
 
+    if "JOB_NM" in df.columns:
+        df['JOB_NM'] = df['JOB_NM'].fillna(0)
+
     # 정리된 표의 인덱스를 재정렬하고 결과를 반환합니다.
     return df.reset_index(drop=True)
 
@@ -507,6 +510,8 @@ def save_travel_table(output_dir=None, dataset_key="여행", mode="train", year=
         df["MVMN_NM"] = df["MVMN_NM"].fillna("정보없음")
     if "TRAVEL_NM" in df.columns:
         df = df.drop(columns=["TRAVEL_NM"], errors="ignore")
+    if "TRAVEL_PERSONA" in df.columns:
+        df = df.drop(columns=["TRAVEL_PERSONA"], errors="ignore")
     return save_dataframe(df, "travel.csv", output_dir)
 
 
