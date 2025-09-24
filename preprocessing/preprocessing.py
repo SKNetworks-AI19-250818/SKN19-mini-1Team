@@ -11,70 +11,59 @@ _project_root = os.path.abspath(os.path.join(_here, ".."))
 _file_map_cache = {} # Changed to a dictionary to cache multiple file maps
 
 
-def get_file_map(mode="train"):
-    """Load the CSV path mapping from the appropriate file_dir.json."""
+def get_file_map(mode="train", year=None):
+    """Load the CSV path mapping from the appropriate file_dir.json for a given year."""
+    if year is None:
+        raise ValueError("The 'year' parameter must be provided.")
+
     global _file_map_cache
-    if mode not in _file_map_cache:
+    cache_key = f"{mode}_{year}"
+    
+    if cache_key not in _file_map_cache:
         if mode == "validation":
             file_name = "file_dir_validation.json"
-        else: # Default to train
+        else:  # Default to train
             file_name = "file_dir.json"
         
-        file_path = os.path.join(_here, file_name)
+        # Construct path to the year-specific directory
+        file_path = os.path.join(_project_root, "data", mode, year, file_name)
         
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f"The mapping file '{file_name}' was not found in '{_here}'. Please create it.")
+            raise FileNotFoundError(f"The mapping file '{file_name}' was not found in '{os.path.dirname(file_path)}'. Please create it.")
 
         with open(file_path, encoding="utf-8") as handle:
             data = json.load(handle)
         
         file_map = {}
         for key, rel_path in data.items():
+            # Paths in file_dir.json are relative to the project root
             file_map[key] = os.path.join(_project_root, rel_path)
-        _file_map_cache[mode] = file_map
+        _file_map_cache[cache_key] = file_map
         
-    return dict(_file_map_cache[mode])
+    return dict(_file_map_cache[cache_key])
 
 
-def load_dataset(key, mode="train", **read_csv_kwargs):
-    """Read a CSV file by its logical key and mode."""
-    file_map = get_file_map(mode)
+def load_dataset(key, mode="train", year=None, **read_csv_kwargs):
+    """Read a CSV file by its logical key, mode, and year."""
+    file_map = get_file_map(mode=mode, year=year)
     if key not in file_map:
         available = ", ".join(sorted(file_map.keys()))
         raise KeyError(f"Unknown dataset key '{key}'. Available keys: {available}")
     return pd.read_csv(file_map[key], **read_csv_kwargs)
 
 
-def preprocess_activity_consumption(drop_columns=None, dataset_key="활동소비내역", mode="train"):
+def preprocess_activity_consumption(drop_columns=None, dataset_key="활동소비내역", mode="train", year=None):
     """Drop unused columns from the activity consumption table."""
-    # PLAN: keep PAYMENT_NUM and PAYMENT_MTHD_SE from TL_csv/tn_activity_consume_his so we can later emit activity_amt_mean_per_payment, activity_amt_max_single, and activity_card_ratio per TRAVEL_ID.
-    # 파일에서 전처리 대상 데이터를 불러와 복사본으로 작업합니다.
-
-    df = load_dataset(dataset_key, mode=mode).copy()
-    # 자주 사용하지 않는 열 목록을 미리 정리합니다.
-
+    df = load_dataset(dataset_key, mode=mode, year=year).copy()
     default_drop = [
-        "SGG_CD",
-        "ROAD_NM_ADDR",
-        "LOTNO_ADDR",
-        "ROAD_NM_CD",
-        "LOTNO_CD",
-        "BRNO",
-        "PAYMENT_DT",
-        "CONSUME_HIS_SEQ",
-        "CONSUME_HIS_SNO",
+        "SGG_CD", "ROAD_NM_ADDR", "LOTNO_ADDR", "ROAD_NM_CD", "LOTNO_CD",
+        "BRNO", "PAYMENT_DT", "CONSUME_HIS_SEQ", "CONSUME_HIS_SNO",
     ]
-    # 기본 삭제 목록을 복사해서 수정 가능한 리스트로 만듭니다.
-
     columns_to_drop = list(default_drop)
     if drop_columns:
-        # 사용자 정의 열이 있다면 중복 없이 목록에 추가합니다.
-
         for column in drop_columns:
             if column not in columns_to_drop:
                 columns_to_drop.append(column)
-    # 준비한 목록에 따라 실제로 열을 제거합니다.
-
     return df.drop(columns=columns_to_drop, errors="ignore")
 
 
@@ -95,12 +84,9 @@ def load_activity_codebook():
     return pd.read_csv(io.StringIO(_activity_codebook_csv), usecols=["cd_b", "cd_nm"])
 
 
-def preprocess_activity_history(dataset_key="활동내역", codebook=None, mode="train"):
+def preprocess_activity_history(dataset_key="활동내역", codebook=None, mode="train", year=None):
     """Fill sparse fields and attach readable activity names."""
-    # PLAN: expose RSVT_YN, EXPND_SE, and ADMISSION_SE as binary indicators for downstream activity_reservation_rate, activity_paid_ratio, and activity_free_entry_ratio rollups sourced from TL_csv/tn_activity_his.
-    # 전처리 대상 데이터를 불러와 복사본으로 안전하게 다룹니다.
-
-    df = load_dataset(dataset_key, mode=mode).copy()
+    df = load_dataset(dataset_key, mode=mode, year=year).copy()
 
     # 여행 진행 순서를 맞추기 위해 정렬 기준을 지정합니다.
 
@@ -153,14 +139,12 @@ def preprocess_lodging_consumption(
     dataset_key="숙박소비내역",
     travel_dataset_key="여행",
     encode_columns=("RSVT_YN", "LODGING_TYPE_CD", "PAYMENT_MTHD_SE"),
-    mode="train"
+    mode="train",
+    year=None
 ):
     """Tidy the lodging consumption data and encode categorical fields."""
-    # PLAN: parse CHK_IN_DT_MIN and CHK_OUT_DT_MIN into lodging_nights and pair with PAYMENT_NUM to derive lodging_amt_per_night and lodging_payment_max using TL_csv/tn_lodge_consume_his.
-    # 숙박 이용 정보와 여행 기본 정보를 각각 불러옵니다.
-
-    df = load_dataset(dataset_key, mode=mode).copy()
-    travel = load_dataset(travel_dataset_key, usecols=["TRAVEL_ID", "TRAVEL_START_YMD"], mode=mode).copy()
+    df = load_dataset(dataset_key, mode=mode, year=year).copy()
+    travel = load_dataset(travel_dataset_key, usecols=["TRAVEL_ID", "TRAVEL_START_YMD"], mode=mode, year=year).copy()
 
     if "PAYMENT_DT" in df.columns:
         # 결제일을 날짜 형식으로 변환해 계산이 가능하도록 만듭니다.
@@ -280,11 +264,11 @@ def get_sido_code_map():
 
     return sido_map
 
-def preprocess_traveller_master(dataset_key="여행객_Master", mode="train"):
+def preprocess_traveller_master(dataset_key="여행객_Master", mode="train", year=None):
     """
     여행객 Master 테이블을 전처리하고, 거주지 및 목적지 컬럼을 SGG_CD1 코드로 변환합니다.
     """
-    df = load_dataset(dataset_key, mode=mode).copy()
+    df = load_dataset(dataset_key, mode=mode, year=year).copy()
     sido_code_map = get_sido_code_map()
     
     # 긴 이름부터 찾도록 키를 정렬 ('경상남도'가 '경남'보다 먼저 매칭되도록)
@@ -346,7 +330,8 @@ def preprocess_visit_area_info(
     exclude_codes=(21, 22, 23),
     drop_columns=None,
     return_base_table=False,
-    mode="train"
+    mode="train",
+    year=None
 ):
     """
     방문지 정보 테이블에서 여행 단위의 요약 통계를 생성합니다.
@@ -354,7 +339,7 @@ def preprocess_visit_area_info(
     - 실패한 방문지 비율이 50% 이상인 여행을 '실패한 여행'으로 정의합니다.
     """
     # 1. 원본 데이터 로드 및 기본 전처리
-    df = load_dataset(dataset_key, mode=mode).copy()
+    df = load_dataset(dataset_key, mode=mode, year=year).copy()
     default_drop = [
         "ROAD_NM_ADDR", "LOTNO_ADDR", "X_COORD", "Y_COORD", "ROAD_NM_CD",
         "LOTNO_CD", "POI_ID", "POI_NM", "RESIDENCE_TIME_MIN",
@@ -466,15 +451,15 @@ def save_dataframe(df, filename, output_dir=None):
     return filepath
 
 
-def save_activity_consumption(output_dir=None, mode="train", **preprocess_kwargs):
+def save_activity_consumption(output_dir=None, mode="train", year=None, **preprocess_kwargs):
     """Run the activity consumption preprocessing and save the result."""
-    df = preprocess_activity_consumption(mode=mode, **preprocess_kwargs)
+    df = preprocess_activity_consumption(mode=mode, year=year, **preprocess_kwargs)
     return save_dataframe(df, "activity_consumption.csv", output_dir)
 
 
-def save_activity_history(output_dir=None, mode="train", **preprocess_kwargs):
+def save_activity_history(output_dir=None, mode="train", year=None, **preprocess_kwargs):
     """Run the activity history preprocessing and save the result."""
-    df = preprocess_activity_history(mode=mode, **preprocess_kwargs)
+    df = preprocess_activity_history(mode=mode, year=year, **preprocess_kwargs)
     return save_dataframe(df, "activity_history.csv", output_dir)
 
 
@@ -493,54 +478,45 @@ def _encode_mapping_for_json(encoders):
     return result
 
 
-def save_lodging_consumption(output_dir=None, mode="train", **preprocess_kwargs):
+def save_lodging_consumption(output_dir=None, mode="train", year=None, **preprocess_kwargs):
     """Run the lodging preprocessing, save the table, and write encoders."""
-    df, encoders = preprocess_lodging_consumption(mode=mode, **preprocess_kwargs)
+    df, encoders = preprocess_lodging_consumption(mode=mode, year=year, **preprocess_kwargs)
     data_path = save_dataframe(df, "lodging_consumption.csv", output_dir)
     if encoders:
         folder = ensure_preprocessing_dir(output_dir)
         json_dir = os.path.join(folder, "json")
         os.makedirs(json_dir, exist_ok=True)
-        # Use a more generic name for the encoder file
         encoder_path = os.path.join(json_dir, "lodging_consumption_encoding.json")
         with open(encoder_path, "w", encoding="utf-8") as handle:
             json.dump(_encode_mapping_for_json(encoders), handle, ensure_ascii=False, indent=2)
     return data_path
 
 
-def save_traveller_master(output_dir=None, mode="train", **preprocess_kwargs):
+def save_traveller_master(output_dir=None, mode="train", year=None, **preprocess_kwargs):
     """Run the traveller preprocessing and save the cleaned table."""
-    df = preprocess_traveller_master(mode=mode, **preprocess_kwargs)
+    df = preprocess_traveller_master(mode=mode, year=year, **preprocess_kwargs)
     return save_dataframe(df, "traveller_master.csv", output_dir)
 
 
-def save_travel_table(output_dir=None, dataset_key="여행", mode="train"):
+def save_travel_table(output_dir=None, dataset_key="여행", mode="train", year=None):
     """Save a cleaned travel table with duplicate columns removed."""
-    df = load_dataset(dataset_key, mode=mode).copy()
-
-    # TRAVEL_MISSION is identical to TRAVEL_PURPOSE, so drop to avoid duplication
+    df = load_dataset(dataset_key, mode=mode, year=year).copy()
     if "TRAVEL_MISSION" in df.columns:
         df = df.drop(columns=["TRAVEL_MISSION"], errors="ignore")
-        
-    # MVMN_NM 컬럼이 존재하면, 결측치(NaN)를 "정보없음" 텍스트로 채웁니다.
     if "MVMN_NM" in df.columns:
         df["MVMN_NM"] = df["MVMN_NM"].fillna("정보없음")
-    
-    # TRAVEL_NM 컬럼 삭제
     if "TRAVEL_NM" in df.columns:
         df = df.drop(columns=["TRAVEL_NM"], errors="ignore")
-
-    # write the cleaned version for downstream merges/EDA
     return save_dataframe(df, "travel.csv", output_dir)
 
 
-def save_visit_area_info(output_dir=None, save_base_table=False, mode="train", **preprocess_kwargs):
+def save_visit_area_info(output_dir=None, save_base_table=False, mode="train", year=None, **preprocess_kwargs):
     """Run the visit area preprocessing and save the aggregated result."""
     if save_base_table:
-        base_df, summary_df = preprocess_visit_area_info(return_base_table=True, mode=mode, **preprocess_kwargs)
+        base_df, summary_df = preprocess_visit_area_info(return_base_table=True, mode=mode, year=year, **preprocess_kwargs)
         base_path = save_dataframe(base_df, "visit_area_base.csv", output_dir)
     else:
-        summary_df = preprocess_visit_area_info(mode=mode, **preprocess_kwargs)
+        summary_df = preprocess_visit_area_info(mode=mode, year=year, **preprocess_kwargs)
         base_path = None
     summary_path = save_dataframe(summary_df, "visit_area_summary.csv", output_dir)
     if save_base_table:
@@ -548,18 +524,18 @@ def save_visit_area_info(output_dir=None, save_base_table=False, mode="train", *
     return summary_path
 
 
-def save_all_preprocessed_data(output_dir=None, save_visit_base=False, mode="train"):
+def save_all_preprocessed_data(output_dir=None, save_visit_base=False, mode="train", year=None):
     """Run every preprocessing step and save each result to disk."""
     paths = {}
-    paths["activity_consumption"] = save_activity_consumption(output_dir=output_dir, mode=mode)
-    paths["activity_history"] = save_activity_history(output_dir=output_dir, mode=mode)
-    paths["lodging_consumption"] = save_lodging_consumption(output_dir=output_dir, mode=mode)
-    paths["traveller_master"] = save_traveller_master(output_dir=output_dir, mode=mode)
-    paths["travel"] = save_travel_table(output_dir=output_dir, mode=mode)
+    paths["activity_consumption"] = save_activity_consumption(output_dir=output_dir, mode=mode, year=year)
+    paths["activity_history"] = save_activity_history(output_dir=output_dir, mode=mode, year=year)
+    paths["lodging_consumption"] = save_lodging_consumption(output_dir=output_dir, mode=mode, year=year)
+    paths["traveller_master"] = save_traveller_master(output_dir=output_dir, mode=mode, year=year)
+    paths["travel"] = save_travel_table(output_dir=output_dir, mode=mode, year=year)
     if save_visit_base:
-        base_path, summary_path = save_visit_area_info(output_dir=output_dir, save_base_table=True, mode=mode)
+        base_path, summary_path = save_visit_area_info(output_dir=output_dir, save_base_table=True, mode=mode, year=year)
         paths["visit_area_base"] = base_path
         paths["visit_area_summary"] = summary_path
     else:
-        paths["visit_area_summary"] = save_visit_area_info(output_dir=output_dir, mode=mode)
+        paths["visit_area_summary"] = save_visit_area_info(output_dir=output_dir, mode=mode, year=year)
     return paths

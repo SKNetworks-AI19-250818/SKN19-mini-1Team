@@ -13,54 +13,35 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run data preprocessing or merging for the SKN19-mini-1Team project."
     )
-    
-    # Group to select the dataset mode (train or validate)
-    mode_group = parser.add_mutually_exclusive_group(required=True)
-    mode_group.add_argument(
-        "--train",
-        action="store_true",
-        help="Run tasks on the training dataset."
-    )
-    mode_group.add_argument(
-        "--validate",
-        action="store_true",
-        help="Run tasks on the validation dataset."
-    )
+    subparsers = parser.add_subparsers(dest="task", required=True)
 
-    # Group to select the task (preprocess or merge)
-    task_group = parser.add_mutually_exclusive_group(required=True)
-    task_group.add_argument(
-        "--preprocess",
-        action="store_true",
-        help="Run all preprocessing steps and save the results.",
-    )
-    task_group.add_argument(
-        "--merge",
-        action="store_true",
-        help="Merge preprocessed datasets into a final dataset.",
-    )
+    # Preprocess command
+    p_preprocess = subparsers.add_parser("preprocess", help="Run preprocessing for a specific year and mode.")
+    p_preprocess.add_argument("--year", choices=["2022", "2023"], required=True, help="Year of the dataset to preprocess.")
+    p_preprocess.add_argument("--mode", choices=["train", "validation"], required=True, dest="mode", help="Dataset mode (train or validation).")
+
+    # Merge command
+    p_merge = subparsers.add_parser("merge", help="Merge preprocessed data from all years for a specific mode.")
+    p_merge.add_argument("--mode", choices=["train", "validation"], required=True, dest="mode", help="Dataset mode to merge (train or validation).")
 
     args = parser.parse_args()
 
-    # Determine mode and paths
-    if args.train:
-        mode = "train"
-        preprocess_output_dir = os.path.join("data", "training", "preprocessing")
-        final_output_dir = os.path.join("data", "training", "final")
-    else: # args.validate
-        mode = "validation"
-        preprocess_output_dir = os.path.join("data", "validation", "preprocessing")
-        final_output_dir = os.path.join("data", "validation", "final")
+    # Map CLI mode argument to directory names
+    mode_to_dir = {
+        "train": "training",
+        "validation": "validation"
+    }
+    mode_dir_name = mode_to_dir[args.mode]
+
+    if args.task == "preprocess":
+        year = args.year
         
-    # Ensure the output directory for the final merged file exists
-    os.makedirs(final_output_dir, exist_ok=True)
-
-
-    if args.preprocess:
-        print(f"Starting data preprocessing for '{mode}' dataset...")
+        preprocess_output_dir = os.path.join("data", mode_dir_name, year, "preprocessing")
+        os.makedirs(preprocess_output_dir, exist_ok=True)
+        
+        print(f"Starting data preprocessing for '{year} {args.mode}' dataset...")
         try:
-            # Pass mode and the correct output directory
-            saved_paths = save_all_preprocessed_data(output_dir=preprocess_output_dir, mode=mode)
+            saved_paths = save_all_preprocessed_data(output_dir=preprocess_output_dir, mode=mode_dir_name, year=year)
             print("Preprocessing finished successfully. Output files:")
             for key, path in saved_paths.items():
                 print(f"  - {key}: {path}")
@@ -68,11 +49,13 @@ def main():
             print(f"An error occurred during preprocessing: {e}", file=sys.stderr)
             sys.exit(1)
 
-    elif args.merge:
-        print(f"Starting dataset merging for '{mode}' dataset...")
+    elif args.task == "merge":
+        final_output_dir = os.path.join("data", mode_dir_name, "final")
+        os.makedirs(final_output_dir, exist_ok=True)
+        
+        print(f"Starting dataset merging for all years for '{args.mode}' dataset...")
         try:
-            # Pass mode and the final output directory
-            final_path = save_final_dataset(mode=mode, output_dir=final_output_dir)
+            final_path = save_final_dataset(mode=mode_dir_name, output_dir=final_output_dir)
             print(f"Merging finished successfully. Final dataset saved to:")
             print(f"  - {final_path}")
         except Exception as e:
