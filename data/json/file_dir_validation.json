@@ -1,0 +1,13 @@
+{
+  "활동소비내역": "data/validation/VL_csv/tn_activity_consume_his_활동소비내역_E.csv",
+  "활동내역": "data/validation/VL_csv/tn_activity_his_활동내역_E.csv",
+  "동반자정보": "data/validation/VL_csv/tn_companion_info_동반자정보_E.csv",
+  "숙박소비내역": "data/validation/VL_csv/tn_lodge_consume_his_숙박소비내역_E.csv",
+  "이동내역": "data/validation/VL_csv/tn_move_his_이동내역_E.csv",
+  "여행": "data/validation/VL_csv/tn_travel_여행_E.csv",
+  "여행객_Master": "data/validation/VL_csv/tn_traveller_master_여행객 Master_E.csv",
+  "방문지정보": "data/validation/VL_csv/tn_visit_area_info_방문지정보_E.csv",
+  "코드A": "data/tag_code/validation/tc_codea_코드A.csv",
+  "코드B": "data/tag_code/validation/tc_codeb_코드B.csv",
+  "시군구": "data/tag_code/validation/tc_sgg_시군구코드.csv"
+}
