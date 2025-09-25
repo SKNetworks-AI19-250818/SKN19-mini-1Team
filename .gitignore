@@ -20,3 +20,7 @@ AGENTS.md
 
 # 환경변수
 .env
+
+# Catboost
+catboost_info/
+artifacts/
