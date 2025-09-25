@@ -225,8 +225,8 @@ def build_final_dataset(mode="train"):
     lodging_summary = aggregate_lodging(lodging)
     visit_summary_ready = prepare_visit_summary(visit_summary)
 
-    # Merge features
-    travel_features = expand_travel_categorical_codes(travel_table.copy())
+    # Merge features (skip PURPOSE one-hot expansion per request)
+    travel_features = travel_table.copy()
     travel_features = travel_features.merge(activity_consume_summary, on="TRAVEL_ID", how="left")
     travel_features = travel_features.merge(activity_history_summary, on="TRAVEL_ID", how="left")
     travel_features = travel_features.merge(lodging_summary, on="TRAVEL_ID", how="left")
@@ -316,11 +316,18 @@ def build_final_dataset(mode="train"):
     sgg_cols_to_drop = ["TRAVEL_LIKE_SGG_1", "TRAVEL_LIKE_SGG_2", "TRAVEL_LIKE_SGG_3"]
     final_df = final_df.drop(columns=sgg_cols_to_drop, errors="ignore")
 
+    # Drop specific visit satisfaction-related columns per request
+    cols_to_drop = [
+        "visit_dgstfn_avg",
+        "visit_revisit_avg",
+        "visit_rcmdtn_avg",
+    ]
+    final_df = final_df.drop(columns=cols_to_drop, errors="ignore")
+
     # remove null
     final_df = final_df.dropna()
 
-    # After final merge: apply MIS-based one-hot encoding for TRAVEL_PURPOSE and TRAVEL_MISSION_CHECK
-    final_df = apply_mis_one_hot(final_df)
+    # Skip MIS-based one-hot encoding for PURPOSE and MISSION CHECK (removed by request)
 
     return final_df
 

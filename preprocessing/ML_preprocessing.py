@@ -3,8 +3,6 @@ import numpy as np
 import pickle
 from typing import Dict, List, Any, Optional
 import os
-import json
-from sklearn.preprocessing import StandardScaler
 
 
 class ObjectLabelEncoder:
@@ -191,8 +189,8 @@ class ObjectLabelEncoder:
 
 def run_ml_preprocessing(mode: str):
     """
-    Runs the ML preprocessing pipeline based on encoding.md rules.
-    Reads 'travel_insight.csv', applies transformations, and saves 'travel_ml.csv'.
+    Runs the ML preprocessing pipeline for CatBoost-friendly inputs.
+    Reads 'travel_insight.csv', applies minimal transformations, and saves 'travel_cat.csv'.
     
     :param mode: 'train' or 'validation'
     """
@@ -204,7 +202,7 @@ def run_ml_preprocessing(mode: str):
     
     input_path = f'data/{mode_dir_name}/final/travel_insight.csv'
     output_dir = f'data/{mode_dir_name}/final/'
-    output_path = os.path.join(output_dir, 'travel_ml.csv')
+    output_path = os.path.join(output_dir, 'travel_cat.csv')
 
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -220,125 +218,9 @@ def run_ml_preprocessing(mode: str):
     df['TRAVEL_END_YEAR'] = df['TRAVEL_END_YMD'].dt.year
     df['TRAVEL_END_MONTH'] = df['TRAVEL_END_YMD'].dt.month
 
-    # 2. Label Encoding
-    cols_to_encode = [
-        'TRAVEL_STATUS_ACCOMPANY',
-        'MVMN_NM',
-        'GENDER',
-    ]
-
-    # The following loop performs label encoding on categorical columns.
-    # A new column with the suffix '_CODE' is created for each.
-    # The mapping is sorted alphabetically for reproducibility.
-    #
-    # Below are the expected mappings based on the data:
-    #
-    # TRAVEL_STATUS_ACCOMPANY:
-    # {
-    #     '__NaN__': 0,
-    #     '2인 가족 여행': 1,
-    #     '2인 여행(가족 외)': 2,
-    #     '3대 동반 여행(친척 포함)': 3,
-    #     '3인 이상 여행(가족 외)': 4,
-    #     '나홀로 여행': 5,
-    #     '부모 동반 여행': 6,
-    #     '자녀 동반 여행': 7,
-    #     '__UNK__': 8
-    # }
-    #
-    # MVMN_NM:
-    # {
-    #     '__NaN__': 0,
-    #     '대중교통 등': 1,
-    #     '자가용': 2,
-    #     '정보없음': 3,
-    #     '__UNK__': 4
-    # }
-    #
-    # GENDER:
-    # {
-    #     '__NaN__': 0,
-    #     '남': 1,
-    #     '여': 2,
-    #     '__UNK__': 3
-    # }
-    for col in cols_to_encode:
-        encoder = ObjectLabelEncoder(include_cols=[col])
-        df[f'{col}_CODE'] = encoder.fit_transform(df[[col]])[col]
-
-    # 3. SIDO Code Encoding from tc_sgg_시군구코드.json
-    with open('data/tag_code/training/json/tc_sgg_시군구코드.json', 'r', encoding='utf-8') as f:
-        sgg_data = json.load(f)
-
-    # Create a mapping from SIDO_NM to SGG_CD1
-    sido_to_code = {
-        item['SIDO_NM']: item['SGG_CD1'] 
-        for item in sgg_data 
-        if item.get('SIDO_NM') and item.get('SGG_NM') is None
-    }
-
-    # Abbreviation mapping from encoding.md and data observation
-    abbr_map = {
-        '경남': '경상남도',
-        '경북': '경상북도',
-        '충남': '충청남도',
-        '충북': '충청북도',
-        '전남': '전라남도',
-        '전북': '전라북도',
-        '제주': '제주특별자치도',
-        '제주도': '제주특별자치도',
-        '서울': '서울특별시',
-        '경기': '경기도',
-        '인천': '인천광역시',
-        '부산': '부산광역시',
-        '대구': '대구광역시',
-        '광주': '광주광역시',
-        '대전': '대전광역시',
-        '울산': '울산광역시',
-        '세종': '세종특별자치시',
-        '강원': '강원도',
-        '도서 지역': '도서지역',
-        '도서지역' : '도서지역'
-    }
-
-    for col in ['TRAVEL_STATUS_RESIDENCE', 'TRAVEL_STATUS_DESTINATION']:
-        # Normalize names using abbreviation map
-        df[col] = df[col].replace(abbr_map)
-
-        # Create new column with SGG_CD1 code
-        # This will overwrite the existing _CODE columns with the new mapping
-        df[f'{col}_CODE'] = df[col].map(sido_to_code)
-
-        # Special rule: if residence/destination is '도서지역', set its code to 0
-        # (island area handling per requirement)
-        mask_island = df[col].astype(str).str.strip() == '도서지역'
-        df.loc[mask_island, f'{col}_CODE'] = 0
-
-    # 4. Scaling Numerical Features
-    cols_to_scale = [
-        'activity_payment_sum', 'activity_payment_count', 'activity_store_count',
-        'activity_history_rows', 'activity_type_unique', 'lodging_payment_sum',
-        'lodging_payment_count', 'lodging_store_count', 'visit_dgstfn_avg',
-        'visit_revisit_avg', 'visit_rcmdtn_avg', 'visit_trip_days',
-        'visit_move_cnt', 'AGE_GRP', 'FAMILY_MEMB', 'INCOME', 'HOUSE_INCOME',
-        'TRAVEL_TERM', 'TRAVEL_NUM', 'TRAVEL_COMPANIONS_NUM',
-        # complex features engineered in merge_datasets.py
-        'activity_per_day', 'spending_per_day', 'activity_to_lodging_ratio',
-        'companions_per_family'
-    ]
-
-    scaler = StandardScaler()
-
-    for col in cols_to_scale:
-        # Fill NaN with the median before scaling
-        median_val = df[col].median()
-        df[col] = df[col].fillna(median_val)
-        
-        # Reshape data for scaler and apply scaling
-        scaled_data = scaler.fit_transform(df[[col]])
-        
-        # Create new scaled column
-        df[f'{col}_SCALED'] = scaled_data
+    # Drop specific visit satisfaction-related columns (per request)
+    drop_visit_cols = ['visit_dgstfn_avg', 'visit_revisit_avg', 'visit_rcmdtn_avg']
+    df = df.drop(columns=drop_visit_cols, errors='ignore')
 
     # Save the preprocessed dataframe
     df.to_csv(output_path, index=False)
