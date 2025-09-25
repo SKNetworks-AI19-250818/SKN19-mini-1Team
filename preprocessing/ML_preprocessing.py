@@ -294,16 +294,24 @@ def run_ml_preprocessing(mode: str):
         '광주': '광주광역시',
         '대전': '대전광역시',
         '울산': '울산광역시',
-        '세종': '세종특별자치시'
+        '세종': '세종특별자치시',
+        '강원': '강원도',
+        '도서 지역': '도서지역',
+        '도서지역' : '도서지역'
     }
 
     for col in ['TRAVEL_STATUS_RESIDENCE', 'TRAVEL_STATUS_DESTINATION']:
         # Normalize names using abbreviation map
         df[col] = df[col].replace(abbr_map)
-        
+
         # Create new column with SGG_CD1 code
         # This will overwrite the existing _CODE columns with the new mapping
         df[f'{col}_CODE'] = df[col].map(sido_to_code)
+
+        # Special rule: if residence/destination is '도서지역', set its code to 0
+        # (island area handling per requirement)
+        mask_island = df[col].astype(str).str.strip() == '도서지역'
+        df.loc[mask_island, f'{col}_CODE'] = 0
 
     # Save the preprocessed dataframe
     df.to_csv(output_path, index=False)
