@@ -321,7 +321,10 @@ def run_ml_preprocessing(mode: str):
         'lodging_payment_count', 'lodging_store_count', 'visit_dgstfn_avg',
         'visit_revisit_avg', 'visit_rcmdtn_avg', 'visit_trip_days',
         'visit_move_cnt', 'AGE_GRP', 'FAMILY_MEMB', 'INCOME', 'HOUSE_INCOME',
-        'TRAVEL_TERM', 'TRAVEL_NUM', 'TRAVEL_COMPANIONS_NUM'
+        'TRAVEL_TERM', 'TRAVEL_NUM', 'TRAVEL_COMPANIONS_NUM',
+        # complex features engineered in merge_datasets.py
+        'activity_per_day', 'spending_per_day', 'activity_to_lodging_ratio',
+        'companions_per_family'
     ]
 
     scaler = StandardScaler()

@@ -60,9 +60,6 @@ BINARY_CLASSIFICATION_FEATURES = [
     'lodging_payment_sum_SCALED',
     'lodging_payment_count_SCALED',
     'lodging_store_count_SCALED',
-    # 'visit_dgstfn_avg_SCALED',
-    # 'visit_revisit_avg_SCALED',
-    # 'visit_rcmdtn_avg_SCALED',
     'visit_trip_days_SCALED',
     'visit_move_cnt_SCALED',
     'AGE_GRP_SCALED',
@@ -71,7 +68,12 @@ BINARY_CLASSIFICATION_FEATURES = [
     'HOUSE_INCOME_SCALED',
     'TRAVEL_TERM_SCALED',
     'TRAVEL_NUM_SCALED',
-    'TRAVEL_COMPANIONS_NUM_SCALED'
+    'TRAVEL_COMPANIONS_NUM_SCALED',
+    'activity_per_day_SCALED',
+    'spending_per_day_SCALED',
+    'activity_to_lodging_ratio_SCALED',
+    'companions_per_family_SCALED'
+
 ]
 
 CLUSTERING_FEATURES = [
@@ -134,9 +136,6 @@ CLUSTERING_FEATURES = [
     'lodging_payment_sum_SCALED',
     'lodging_payment_count_SCALED',
     'lodging_store_count_SCALED',
-    # 'visit_dgstfn_avg_SCALED',
-    # 'visit_revisit_avg_SCALED',
-    # 'visit_rcmdtn_avg_SCALED',
     'visit_trip_days_SCALED',
     'visit_move_cnt_SCALED',
     'AGE_GRP_SCALED',
@@ -145,5 +144,9 @@ CLUSTERING_FEATURES = [
     'HOUSE_INCOME_SCALED',
     'TRAVEL_TERM_SCALED',
     'TRAVEL_NUM_SCALED',
-    'TRAVEL_COMPANIONS_NUM_SCALED'
+    'TRAVEL_COMPANIONS_NUM_SCALED',
+    'activity_per_day_SCALED',
+    'spending_per_day_SCALED',
+    'activity_to_lodging_ratio_SCALED',
+    'companions_per_family_SCALED'
 ]

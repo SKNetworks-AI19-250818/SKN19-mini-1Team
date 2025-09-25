@@ -263,6 +263,52 @@ def build_final_dataset(mode="train"):
 
     # Final merge with traveller master
     final_df = travel_features.merge(traveller_master, on="TRAVELER_ID", how="left")
+
+    # ---------------------------------------------------------------------
+    # Complex feature engineering (from complex_features.md)
+    # 1) activity_per_day = activity_payment_count / visit_trip_days
+    # 2) spending_per_day = (activity_payment_sum + lodging_payment_sum) / visit_trip_days
+    # 3) activity_to_lodging_ratio = activity_payment_sum / (lodging_payment_sum + 1)
+    # 4) companions_per_family = TRAVEL_COMPANIONS_NUM / FAMILY_MEMB
+    # Safe guards against division-by-zero/NaN
+    # ---------------------------------------------------------------------
+    def _safe_div(numer, denom):
+        denom_safe = denom.copy()
+        # Replace non-positive or NaN denominators with 1 to avoid div-by-zero
+        denom_safe = denom_safe.fillna(0)
+        denom_safe = denom_safe.where(denom_safe > 0, other=1)
+        return numer.fillna(0) / denom_safe
+
+    if "activity_payment_count" in final_df.columns and "visit_trip_days" in final_df.columns:
+        final_df["activity_per_day"] = _safe_div(
+            final_df["activity_payment_count"].astype(float),
+            final_df["visit_trip_days"].astype(float),
+        )
+
+    if (
+        "activity_payment_sum" in final_df.columns
+        and "lodging_payment_sum" in final_df.columns
+        and "visit_trip_days" in final_df.columns
+    ):
+        total_spend = final_df["activity_payment_sum"].astype(float).fillna(0) + \
+                      final_df["lodging_payment_sum"].astype(float).fillna(0)
+        final_df["spending_per_day"] = _safe_div(
+            total_spend,
+            final_df["visit_trip_days"].astype(float),
+        )
+
+    if "activity_payment_sum" in final_df.columns and "lodging_payment_sum" in final_df.columns:
+        final_df["activity_to_lodging_ratio"] = final_df["activity_payment_sum"].astype(float).fillna(0) / (
+            final_df["lodging_payment_sum"].astype(float).fillna(0) + 1.0
+        )
+
+    if "TRAVEL_COMPANIONS_NUM" in final_df.columns and "FAMILY_MEMB" in final_df.columns:
+        final_df["companions_per_family"] = _safe_div(
+            final_df["TRAVEL_COMPANIONS_NUM"].astype(float),
+            final_df["FAMILY_MEMB"].astype(float),
+        )
+
+    # Drop identifier after feature engineering
     if "TRAVELER_ID" in final_df.columns:
         final_df = final_df.drop(columns=["TRAVELER_ID"])
 
