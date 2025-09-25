@@ -4,6 +4,7 @@ import pickle
 from typing import Dict, List, Any, Optional
 import os
 import json
+from sklearn.preprocessing import StandardScaler
 
 
 class ObjectLabelEncoder:
@@ -312,6 +313,29 @@ def run_ml_preprocessing(mode: str):
         # (island area handling per requirement)
         mask_island = df[col].astype(str).str.strip() == '도서지역'
         df.loc[mask_island, f'{col}_CODE'] = 0
+
+    # 4. Scaling Numerical Features
+    cols_to_scale = [
+        'activity_payment_sum', 'activity_payment_count', 'activity_store_count',
+        'activity_history_rows', 'activity_type_unique', 'lodging_payment_sum',
+        'lodging_payment_count', 'lodging_store_count', 'visit_dgstfn_avg',
+        'visit_revisit_avg', 'visit_rcmdtn_avg', 'visit_trip_days',
+        'visit_move_cnt', 'AGE_GRP', 'FAMILY_MEMB', 'INCOME', 'HOUSE_INCOME',
+        'TRAVEL_TERM', 'TRAVEL_NUM', 'TRAVEL_COMPANIONS_NUM'
+    ]
+
+    scaler = StandardScaler()
+
+    for col in cols_to_scale:
+        # Fill NaN with the median before scaling
+        median_val = df[col].median()
+        df[col] = df[col].fillna(median_val)
+        
+        # Reshape data for scaler and apply scaling
+        scaled_data = scaler.fit_transform(df[[col]])
+        
+        # Create new scaled column
+        df[f'{col}_SCALED'] = scaled_data
 
     # Save the preprocessed dataframe
     df.to_csv(output_path, index=False)
