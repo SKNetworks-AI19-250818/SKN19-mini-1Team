@@ -1,0 +1,66 @@
+/* base.css - 공통 스타일 */
+
+/* 전체 배경 & 폰트 */
+body {
+    background-color: #d2e8f5;
+    font-family: "Noto Sans KR", sans-serif;
+}
+
+/* 페이지 타이틀 */
+.page-title {
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #4cc9f0, #0077b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+/* 페이지 서브타이틀 */
+.page-subtext {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #495057;
+    margin-bottom: 20px;
+}
+
+/* 공통 CTA 버튼 스타일 */
+.button-primary {
+    background-color: #4cc9f0 !important;
+    color: white !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
+    width: 70% !important;
+    margin: 0 auto;
+    display: block;
+    padding: 1em 0 !important;
+    font-size: 1.2rem !important;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+    transition: transform 0.25s ease-in-out, background-color 0.25s ease-in-out;
+}
+
+.button-primary:hover {
+    background-color: #3cb0e8 !important;
+    transform: scale(1.05);
+}
+
+/* secondary 버튼 (테두리만) */
+.button-secondary {
+    background: transparent !important;
+    color: #4cc9f0 !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    border: 2px solid #4cc9f0 !important;
+    border-radius: 10px !important;
+    width: 70% !important;
+    margin: 10px auto;
+    display: block;
+    padding: 0.7em 0 !important;
+    transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
+}
+
+.button-secondary:hover {
+    background-color: #4cc9f0 !important;
+    color: white !important;
+}
