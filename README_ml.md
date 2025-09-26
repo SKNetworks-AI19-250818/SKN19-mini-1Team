@@ -104,7 +104,7 @@
 | ----- | ----- |
 | 언어 및 환경 | ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) |
 | 데이터 전처리 | ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white) ![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white) |
-| 시각화 | ![Seaborn](https://img.shields.io/badge/Seaborn-3776AB?style=for-the-badge&logo=seaborn&logoColor=white) ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black) |
+| 시각화 | ![Seaborn](https://img.shields.io/badge/Seaborn-3776AB?style=for-the-badge&logo=seaborn&logoColor=white) ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black) ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white) |
 | 협업 | ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white) ![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white) |
 
 ---
@@ -114,15 +114,17 @@
 
 ## One Trip, Two Fates 👎👍
 
-## 🔎 데이터 이해 (EDA)
+## 🔎 EDA 리마인드
 
-## 💡 인사이트 요약 
+## 💡 모델 선정 과정 및 이유
 
-## 📖 통합 데이터 개요 · EDA 
+## 📖 데이터 튜닝
 
-## 💪 NEXT ACTION
+## 💪 최종성능결과 및 시연
 
-### 💬 한줄회고
+## 🔫 트러블 슈팅팅
+
+## 💬 한줄회고
 
 <table style="width:100%, table-layout: fixed;">
   <tr>
@@ -131,23 +133,23 @@
   </tr>
   <tr>
     <td style="width: 10%" align="center">강지완</td>
-    <td>이번 EDA 과정을 진행하면서 협업이 무엇인지에 대해 다시 생각하게 되었습니다. 각자 맡은 일을 하는 분업은 일의 효율이 좋을 수 있지만, 공통된 문제에 대해 다같이 생각해보는 협업은 다양한 시각에서의 접근을 가능하게 해주었습니다. 단순한 문제 해결을 위한 과정보다 각자의 생각을 듣고 말하며 문제에 대한 이해도를 높일 수 있는 기회가 되었습니다.</td>
+    <td></td>
   </tr>
   <tr>
     <td style="width: 10%" align="center">김성욱</td>
-    <td>이번 EDA 과정을 통해 수업 내용에 대한 이해도가 부족하다는 사실을 다시 새기게 되었고, 동시에 팀원들의 협력과 배려 덕분에 한층 성장할 수 있는 계기가 되었습니다. 다양한 시각에서 의견을 나누며 데이터를 바라보니 문제에 대한 이해가 훨씬 깊어졌습니다. 또한 주제 선정과 데이터 탐색에 충분한 시간을 들이는 것이 얼마나 중요한지도 깨닫게 되었습니다. 협업 도구를 활용해 실시간으로 소통하며 프로젝트를 진행한 경험 역시 매우 유익했으며, 앞으로 더 깊이 탐구할 수 있는 계기가 될 것 같습니다.</td>
+    <td></td>
   </tr>
   <tr>
     <td style="width: 10%" align="center">김소희</td>
-    <td>데이터 탐색과 주제 선정에 시간을 충분히 투자한 덕분에 단순 분석에 그치지 않고 가치 있는 인사이트로 이어졌습니다. 프로젝트의 방향을 잡는 과정이 얼마나 중요한지 깨닫고 데이터를 깊이 들여다보는 것이 가치 있음을 배웠으며, 다음에도 더욱 깊이 탐색해보고자 합니다.</td>
+    <td></td>
   </tr>
   <tr>
     <td style="width: 10%" align="center">박진형</td>
-    <td>프로젝트 초기엔 주요 포인트를 세일즈로 잡고 의견을 냈었는데, 다른 팀원분들과 소통하며 기술적으로 필요한 부분에 대해 이야기를 나누며 시야가 넓어질 수 있었습니다. 데이터를 처리하며 무엇을 신경써야 할 지 혼자 생각하기보다 여러 의견을 수렴하고 판단하는 방식이 중요함을 깨닫는 경험이 되었습니다.</td>
+    <td></td>
   </tr>
   <tr>
     <td style="width: 10%" align="center">이상민</td>
-    <td>이번 미니 프로젝트를 시작하며 정한 주제는 1차 프로젝트 때에 비해서 데이터의 양이 훨씬 많아 더 좋은 결과가 나올 것 같아서 기대되었습니다. 컬럼들을 정리하는데 많은 노력이 들긴 했지만, EDA 과정에 대해서 학습하기에는 정말 좋은 경험이었던 것 같습니다. 또한 지완님의 추천으로 slack이라는 클라우드 컴퓨팅 기반 협업툴을 사용해보았는데, 실시간으로 협업을 진행하는데에 있어 많은 도움이 된 것 같습니다.</td>
+    <td></td>
   </tr>
 </table>
 
