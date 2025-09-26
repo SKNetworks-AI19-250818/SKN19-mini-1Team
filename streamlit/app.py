@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import pathlib
 import joblib
 import time
 import os
@@ -10,7 +11,9 @@ import os
 #------------------------------
 from utils.loader import load_css, img_to_base64, render_clouds, render_image
 from utils.services import *
-
+BASE_DIR = pathlib.Path(__file__).resolve().parent
+STYLE_DIR = BASE_DIR / "style"
+ASSETS_DIR = BASE_DIR / "assets" / "img"
 #------------------------------
 # 기본 설정 & 예측 모델
 #------------------------------
@@ -26,8 +29,8 @@ if "result" not in st.session_state:
 #------------------------------
 def intro_page():
 
-    load_css("intro.css")
-    render_clouds("assets/img/cloudy.png", count=5, top_range=(5, 80), size_range=(120, 240))
+    load_css(str(STYLE_DIR / "intro.css"))
+    render_clouds(str(ASSETS_DIR / "cloudy.png"), count=5, top_range=(5, 80), size_range=(120, 240))
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
@@ -41,7 +44,7 @@ def intro_page():
         unsafe_allow_html=True
     )
 
-    render_image("assets/img/rating-color.png", css_class="intro-main-image")
+    render_image(str(ASSETS_DIR / "rating-color.png"), css_class="intro-main-image")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
@@ -61,7 +64,7 @@ def intro_page():
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
-    b64_arrow = img_to_base64("assets/img/direction-arrow.png")
+    b64_arrow = img_to_base64(str(ASSETS_DIR / "direction-arrow.png"))
     st.markdown(
         f"""
         <div class="arrow-wrap">
@@ -80,8 +83,8 @@ def intro_page():
 #------------------------------
 def form_page():
 
-    load_css("form.css")
-    render_clouds("assets/img/cloudy.png", count=5, top_range=(5, 80), size_range=(120, 240))
+    load_css(str(STYLE_DIR / "form.css"))
+    render_clouds(str(ASSETS_DIR / "cloudy.png"), count=5, top_range=(5, 80), size_range=(120, 240))
 
     st.markdown("<h2 class='page-title'>✏️ 여행 정보 입력</h2>", unsafe_allow_html=True)
     st.markdown("<p class='page-subtext'>아래 정보를 입력하면 당신의 여행 운명을 알려드립니다.</p>", unsafe_allow_html=True)
@@ -136,9 +139,9 @@ def form_page():
 #------------------------------
 def result_page():
 
-    load_css("base.css")
-    load_css("result.css")
-    render_clouds("assets/img/cloudy.png", count=5, top_range=(5, 80), size_range=(120, 240))
+    load_css(str(STYLE_DIR / "base.css"))
+    load_css(str(STYLE_DIR / "result.css"))
+    render_clouds(str(ASSETS_DIR / "cloudy.png"), count=5, top_range=(5, 80), size_range=(120, 240))
 
     st.markdown("<h2 class='page-title'>🔮 여행 운명 결과</h2>", unsafe_allow_html=True)
     st.markdown("<p class='page-subtext'>당신의 여행 운명을 예측한 결과입니다.</p>", unsafe_allow_html=True)
