@@ -10,7 +10,7 @@ VL_csv
 .DS_Store
 
 # # image file
-# *.png
+*.png
 
 # pycache
 __pycache__/
@@ -24,3 +24,6 @@ AGENTS.md
 # Catboost
 catboost_info/
 artifacts/
+
+# 산출물
+ML/outputs/**
