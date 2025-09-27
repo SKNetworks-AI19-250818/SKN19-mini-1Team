@@ -54,101 +54,115 @@ def aggregate_activity_consumption(df):
 
 def aggregate_activity_history(df):
     if df.empty:
-        return pd.DataFrame(columns=["TRAVEL_ID", "activity_history_rows", "activity_type_unique"])
-    counts = df.groupby("TRAVEL_ID").size().rename("activity_history_rows")
-    unique_types = df.groupby("TRAVEL_ID")["ACTIVITY_TYPE_CD"].nunique().rename("activity_type_unique")
-    return pd.concat([counts, unique_types], axis=1).reset_index()
+        return pd.DataFrame(columns=["TRAVEL_ID", "activity_history_rows", "ACTIVITY_TYPE_CD"])
 
-def aggregate_lodging(df):
-    columns = ["TRAVEL_ID", "lodging_payment_sum"]
-    if df.empty:
-        return pd.DataFrame(columns=columns)
-    df = df.copy()
-    if "PAYMENT_AMT_WON" in df.columns:
-        df["PAYMENT_AMT_WON"] = pd.to_numeric(df["PAYMENT_AMT_WON"], errors="coerce").fillna(0)
-    else:
-        df["PAYMENT_AMT_WON"] = 0
-    total = df.groupby("TRAVEL_ID")["PAYMENT_AMT_WON"].sum().rename("lodging_payment_sum")
-    result = total.reset_index()
-    result["lodging_payment_sum"] = result["lodging_payment_sum"].fillna(0).round().astype(int)
-    return result
+    # Count total activities per trip
+    activity_counts = df.groupby("TRAVEL_ID").size().rename("activity_history_rows")
+    
+    # Get mode of activity type
+    activity_type_mode = df.groupby('TRAVEL_ID')['ACTIVITY_TYPE_CD'].agg(lambda x: x.mode()[0] if not x.mode().empty else np.nan).rename('ACTIVITY_TYPE_CD')
+
+    summary_df = pd.concat([activity_counts, activity_type_mode], axis=1)
+    
+    return summary_df.reset_index()
+
+
 
 def prepare_visit_summary(df):
     if df.empty:
-        return pd.DataFrame(columns=["TRAVEL_ID", "visit_move_cnt", "IS_FAILED_TRIP"])
+        return pd.DataFrame(columns=["TRAVEL_ID", "MOVE_CNT", "TRIP_DAYS", "DGSTFN_AVG", "REVISIT_AVG", "RCMDTN_AVG"])
 
-    columns_to_keep = ["TRAVEL_ID", "MOVE_CNT", "IS_FAILED_TRIP"]
+    columns_to_keep = ["TRAVEL_ID", "MOVE_CNT", "TRIP_DAYS", "DGSTFN_AVG", "REVISIT_AVG", "RCMDTN_AVG"]
     existing = [column for column in columns_to_keep if column in df.columns]
     result = df[existing].copy()
-    if "MOVE_CNT" in result.columns:
-        result = result.rename(columns={"MOVE_CNT": "visit_move_cnt"})
-    if "visit_move_cnt" not in result.columns:
-        result["visit_move_cnt"] = 0
+    if "MOVE_CNT" not in result.columns:
+        result["MOVE_CNT"] = 0
+    if "TRIP_DAYS" not in result.columns:
+        result["TRIP_DAYS"] = 0
     return result
 
 def build_final_dataset(mode="train"):
+    # Load necessary files
     activity_consumption = read_preprocessed_csv_for_all_years("activity_consumption.csv", mode=mode)
-    lodging = read_preprocessed_csv_for_all_years("lodging_consumption.csv", mode=mode)
     visit_summary = read_preprocessed_csv_for_all_years("visit_area_summary.csv", mode=mode)
+    activity_history = read_preprocessed_csv_for_all_years("activity_history.csv", mode=mode)
     travel_table = read_preprocessed_csv_for_all_years("travel.csv", mode=mode)
+    traveller_master = read_preprocessed_csv_for_all_years("traveller_master.csv", mode=mode)
 
+    # Aggregate data
     activity_consume_summary = aggregate_activity_consumption(activity_consumption)
-    lodging_summary = aggregate_lodging(lodging)
     visit_summary_ready = prepare_visit_summary(visit_summary)
+    activity_history_summary = aggregate_activity_history(activity_history)
 
-    travel_features = travel_table.copy()
-    travel_features = travel_features.merge(activity_consume_summary, on="TRAVEL_ID", how="left")
-    travel_features = travel_features.merge(lodging_summary, on="TRAVEL_ID", how="left")
-    travel_features = travel_features.merge(visit_summary_ready, on="TRAVEL_ID", how="left")
+    # Merge traveller_master to get persona and other traveler features
+    traveller_master = traveller_master.drop_duplicates(subset=["TRAVELER_ID"])
+    final_df = travel_table.merge(traveller_master, on="TRAVELER_ID", how="left")
 
-    feature_defaults = {
-        "TRAVEL_LENGTH": 0,
-        "activity_payment_sum": 0,
-        "lodging_payment_sum": 0,
-        "visit_move_cnt": 0,
-    }
-    for column, default in feature_defaults.items():
-        if column in travel_features.columns:
-            travel_features[column] = pd.to_numeric(travel_features[column], errors="coerce").fillna(default)
+    # Merge other summaries
+    final_df = final_df.merge(visit_summary_ready, on="TRAVEL_ID", how="left")
+    final_df = final_df.merge(activity_consume_summary, on="TRAVEL_ID", how="left")
+    final_df = final_df.merge(activity_history_summary, on="TRAVEL_ID", how="left")
 
-    travel_features["total_payment"] = travel_features["activity_payment_sum"] + travel_features["lodging_payment_sum"]
+    # Fill nulls based on data type
+    for col in final_df.columns:
+        if col == 'TRAVEL_ID':
+            continue
+        if final_df[col].isnull().any():
+            if pd.api.types.is_object_dtype(final_df[col]):
+                final_df[col] = final_df[col].fillna("정보없음")
+            elif pd.api.types.is_numeric_dtype(final_df[col]):
+                median_val = final_df[col].median()
+                final_df[col] = final_df[col].fillna(median_val)
 
-    if "IS_FAILED_TRIP" in travel_features.columns:
-        travel_features["IS_FAILED_TRIP"] = pd.to_numeric(
-            travel_features["IS_FAILED_TRIP"], errors="coerce"
-        )
+    # --- Calculate SUCCESS_SCORE ---
+    if all(c in final_df.columns for c in ['DGSTFN_AVG', 'REVISIT_AVG', 'RCMDTN_AVG']):
+        avg_satisfaction = (final_df['DGSTFN_AVG'] + final_df['REVISIT_AVG'] + final_df['RCMDTN_AVG']) / 3
+        score_A = ((avg_satisfaction - 1) / 4 * 40).clip(0, 40)
+    else:
+        score_A = 0
+
+    unique_activities = activity_history.groupby('TRAVEL_ID')['ACTIVITY_TYPE_CD'].nunique().rename('unique_activity_count')
+    final_df = final_df.merge(unique_activities, on='TRAVEL_ID', how='left')
+    final_df['unique_activity_count'] = final_df['unique_activity_count'].fillna(0)
+    score_D = final_df['unique_activity_count'].clip(upper=5) * 2
+    
+    final_df['SUCCESS_SCORE'] = score_A + score_D
+    # --- End of SUCCESS_SCORE calculation ---
+
+    if 'activity_payment_sum' in final_df.columns:
+        q1 = final_df['activity_payment_sum'].quantile(0.25)
+        q3 = final_df['activity_payment_sum'].quantile(0.75)
+        def classify_payment(payment):
+            if payment <= q1: return 'low'
+            elif payment >= q3: return 'high'
+            else: return 'med'
+        final_df['payment_persona'] = final_df['activity_payment_sum'].apply(classify_payment)
 
     final_columns = [
-        "TRAVEL_ID",
-        "TRAVEL_LENGTH",
-        "total_payment",
-        "visit_move_cnt",
-        "IS_FAILED_TRIP",
-    ]
-    existing_final_columns = [column for column in final_columns if column in travel_features.columns]
-    final_df = travel_features[existing_final_columns].copy()
+        "TRAVEL_ID", "SUCCESS_SCORE", "TRIP_DAYS", "MOVE_CNT", 
+        "activity_payment_sum", "activity_history_rows", "ACTIVITY_TYPE_CD",
+        "payment_persona", "TRAVEL_PERSONA_PURPOSE",
+        # Add new traveler features
+        "GENDER", "AGE_GRP", "HOUSE_INCOME", "TRAVEL_MOTIVE_1",
+        "TRAVEL_STATUS_ACCOMPANY", "TRAVEL_COMPANIONS_NUM", "RESIDENCE_SGG_CD",
+    ] + [f"TRAVEL_STYLE_{i}" for i in range(1, 9)]
+    
+    existing_final_columns = [column for column in final_columns if column in final_df.columns]
+    final_df = final_df[existing_final_columns].copy()
 
-    missing_required_columns = [column for column in final_columns if column not in final_df.columns]
-    if missing_required_columns:
-        raise ValueError(
-            "Missing required columns in final dataset: " + ", ".join(missing_required_columns)
-        )
-
-    if "IS_FAILED_TRIP" in final_df.columns:
-        final_df = final_df.dropna(subset=["IS_FAILED_TRIP"])
-        final_df["IS_FAILED_TRIP"] = final_df["IS_FAILED_TRIP"].astype(int)
-
-    for column in ["TRAVEL_LENGTH", "total_payment", "visit_move_cnt"]:
+    int_columns = ["TRIP_DAYS", "MOVE_CNT", "activity_payment_sum", "activity_history_rows", "GENDER", "AGE_GRP", "HOUSE_INCOME", "TRAVEL_MOTIVE_1"] + [f"TRAVEL_STYLE_{i}" for i in range(1, 9)]
+    for column in int_columns:
         if column in final_df.columns:
             final_df[column] = final_df[column].astype(int)
 
-    # Derive per-day metrics while protecting against zero-length trips.
     per_day_mappings = {
-        "total_payment_per_day": "total_payment",
-        "visit_move_cnt_per_day": "visit_move_cnt",
+        "move_cnt_per_day": "MOVE_CNT",
+        "activity_payment_sum_per_day": "activity_payment_sum",
+        "activity_history_rows_per_day": "activity_history_rows",
     }
-    if "TRAVEL_LENGTH" in final_df.columns:
-        length_series = final_df["TRAVEL_LENGTH"].replace(0, pd.NA).astype(float)
+
+    if "TRIP_DAYS" in final_df.columns:
+        length_series = final_df["TRIP_DAYS"].replace(0, pd.NA).astype(float)
         for new_column, source_column in per_day_mappings.items():
             if source_column in final_df.columns:
                 per_day_values = final_df[source_column] / length_series
@@ -157,22 +171,22 @@ def build_final_dataset(mode="train"):
         for new_column in per_day_mappings:
             final_df[new_column] = 0
 
-    # Scale the payment columns
-    scaler = StandardScaler()
-    if "total_payment" in final_df.columns:
-        final_df["total_payment"] = scaler.fit_transform(final_df[["total_payment"]])
-    
-    if "total_payment_per_day" in final_df.columns:
-        scaler_per_day = StandardScaler()
-        final_df["total_payment_per_day"] = scaler_per_day.fit_transform(final_df[["total_payment_per_day"]])
-
     per_day_columns = list(per_day_mappings.keys())
-    final_df = final_df[existing_final_columns + per_day_columns]
+    
+    all_final_columns = existing_final_columns + per_day_columns
+    final_df = final_df[[col for col in all_final_columns if col in final_df.columns]]
 
     return final_df
 
 def save_final_dataset(mode="train", output_dir=None):
     df = build_final_dataset(mode=mode)
+    
+    # Print distribution of SUCCESS_SCORE for analysis
+    if 'SUCCESS_SCORE' in df.columns:
+        print("--- SUCCESS_SCORE Distribution ---")
+        print(df['SUCCESS_SCORE'].describe())
+        print("\n")
+
     if output_dir is None:
         output_dir = get_final_dir(mode=mode)
     os.makedirs(output_dir, exist_ok=True)

@@ -60,10 +60,7 @@ def load_dataset(key, mode="train", year=None, **read_csv_kwargs):
 def preprocess_activity_consumption(drop_columns=None, dataset_key="활동소비내역", mode="train", year=None):
     """Drop unused columns from the activity consumption table."""
     df = load_dataset(dataset_key, mode=mode, year=year).copy()
-    default_drop = [
-        "SGG_CD", "ROAD_NM_ADDR", "LOTNO_ADDR", "ROAD_NM_CD", "LOTNO_CD",
-        "BRNO", "PAYMENT_DT", "CONSUME_HIS_SEQ", "CONSUME_HIS_SNO",
-    ]
+    default_drop = []
     columns_to_drop = list(default_drop)
     if drop_columns:
         for column in drop_columns:
@@ -73,7 +70,7 @@ def preprocess_activity_consumption(drop_columns=None, dataset_key="활동소비
 
     if "PAYMENT_AMT_WON" in df.columns:
         df["PAYMENT_AMT_WON"] = (
-            pd.to_numeric(df["PAYMENT_AMT_WON"], errors="coerce").fillna(0) / _PAYMENT_AMOUNT_SCALE
+            pd.to_numeric(df["PAYMENT_AMT_WON"], errors="coerce").fillna(0)
         )
 
     return df
@@ -214,44 +211,64 @@ def preprocess_lodging_consumption(
     return df, encoders
 
 
+def load_travel_purpose_codebook():
+    """Loads the travel purpose codebook from tc_codeb_코드B.json."""
+    codebook_path = os.path.join(_project_root, "data", "tag_code", "training", "json", "tc_codeb_코드B.json")
+    if not os.path.exists(codebook_path):
+        raise FileNotFoundError(f"Codebook not found at {codebook_path}")
+    
+    df = pd.read_json(codebook_path)
+    purpose_codes = df[df['cd_a'] == 'MIS'].copy()
+    purpose_codes['cd_b'] = purpose_codes['cd_b'].astype(str)
+    return purpose_codes[['cd_b', 'cd_nm']]
+
 def preprocess_traveller_master(dataset_key="여행객_Master", mode="train", year=None):
     """
     여행객 Master 테이블을 전처리하고, 거주지 및 목적지 컬럼을 SGG_CD1 코드로 변환합니다.
     """
     df = load_dataset(dataset_key, mode=mode, year=year).copy()
     
-    # Columns to drop as requested by user and for cleaning
-    drop_columns = ["TRAVEL_STATUS_YMD"] + [f"TRAVEL_STYLE_{i}" for i in range(1, 9)]
-    drop_columns.extend(["JOB_ETC", "EDU_FNSH_SE"])
-    # Also drop original text columns for residence and destination as they are not being encoded
-    drop_columns.extend(["TRAVEL_STATUS_RESIDENCE", "TRAVEL_STATUS_DESTINATION"])
-    # Add low-importance SIDO and SGG columns to drop list
-    drop_columns.extend([
+    # Columns to drop
+    drop_columns = [
+        "TRAVEL_STATUS_YMD", "JOB_ETC", "EDU_FNSH_SE",
         "TRAVEL_LIKE_SIDO_1", "TRAVEL_LIKE_SIDO_2", "TRAVEL_LIKE_SIDO_3",
         "TRAVEL_LIKE_SGG_1", "TRAVEL_LIKE_SGG_2", "TRAVEL_LIKE_SGG_3",
-        "TRAVEL_MOTIVE_1", "TRAVEL_MOTIVE_2", "TRAVEL_MOTIVE_3"
-    ])
+        "TRAVEL_MOTIVE_2", "TRAVEL_MOTIVE_3"
+    ]
 
-    # Drop all collected columns at once
     df = df.drop(columns=drop_columns, errors="ignore")
 
-    # 가구소득이 비어 있다면 중앙값으로 채워 극단값 영향을 줄입니다.
-    if "HOUSE_INCOME" in df.columns:
-        df["HOUSE_INCOME"] = df["HOUSE_INCOME"].fillna(df["HOUSE_INCOME"].median())
-        
-    # 보조 여행 동기가 없으면 0으로 채워 의미를 명확히 합니다.
-    for column in ["TRAVEL_MOTIVE_2", "TRAVEL_MOTIVE_3"]:
-        if column in df.columns:
-            df[column] = df[column].fillna(0)
-            
-    # TRAVEL_STYL_1 부터 TRAVEL_STYL_8 까지의 컬럼명을 리스트로 생성
-    style_columns_to_drop = [f"TRAVEL_STYL_{i}" for i in range(1, 9)]
-    
-    # 해당 컬럼들을 데이터프레임에서 삭제 (없는 컬럼이 있더라도 오류 발생 방지)
-    df.drop(columns=style_columns_to_drop, inplace=True, errors='ignore')
+    # Manual encoding for GENDER
+    if 'GENDER' in df.columns:
+        gender_map = {'남': 1, '남자': 1, '여': 2, '여자': 2}
+        df['GENDER'] = df['GENDER'].map(gender_map)
 
-    if "JOB_NM" in df.columns:
-        df['JOB_NM'] = df['JOB_NM'].fillna(0)
+    # --- Create Persona Column ---
+    if 'TRAVEL_PURPOSE' in df.columns:
+        purpose_codebook = load_travel_purpose_codebook()
+        df['TRAVEL_PURPOSE'] = df['TRAVEL_PURPOSE'].astype(str)
+        df = df.merge(
+            purpose_codebook,
+            left_on='TRAVEL_PURPOSE',
+            right_on='cd_b',
+            how='left'
+        )
+        df = df.drop(columns=['cd_b'], errors='ignore')
+        df = df.rename(columns={'cd_nm': 'TRAVEL_PERSONA_PURPOSE'})
+
+    # Null handling
+    object_cols = ["TRAVEL_PERSONA", "TRAVEL_MISSION_CHECK", "TRAVEL_PURPOSE", 
+                   "TRAVEL_STATUS_RESIDENCE", "TRAVEL_STATUS_DESTINATION", "JOB_NM", "TRAVEL_PERSONA_PURPOSE"]
+    for col in object_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna("정보없음")
+
+    integer_cols = ["AGE_GRP", "HOUSE_INCOME", "GENDER", "TRAVEL_MOTIVE_1"] + [f"TRAVEL_STYLE_{i}" for i in range(1, 9)]
+    for col in integer_cols:
+        if col in df.columns:
+            if df[col].isnull().any():
+                median_val = df[col].median()
+                df[col] = df[col].fillna(median_val)
 
     # 정리된 표의 인덱스를 재정렬하고 결과를 반환합니다.
     return df.reset_index(drop=True)
@@ -267,8 +284,6 @@ def preprocess_visit_area_info(
 ):
     """
     방문지 정보 테이블에서 여행 단위의 요약 통계를 생성합니다.
-    - 제외 코드에 해당하는 방문지를 제외하고, 각 방문지의 실패 여부를 계산합니다.
-    - 실패한 방문지 비율이 50% 이상인 여행을 '실패한 여행'으로 정의합니다.
     """
     # 1. 원본 데이터 로드 및 기본 전처리
     df = load_dataset(dataset_key, mode=mode, year=year).copy()
@@ -288,52 +303,26 @@ def preprocess_visit_area_info(
         if column in df.columns:
             df[column] = pd.to_datetime(df[column], errors="coerce")
 
-    # 각 만족도 항목이 3점 이하인지 여부를 boolean(True/False) 값으로 계산합니다.
-    # (True는 1, False는 0으로 취급됩니다.)
-    low_dgstfn = (df['DGSTFN'] <= 3)
-    low_revisit = (df['REVISIT_INTENTION'] <= 3)
-    low_rcmdtn = (df['RCMDTN_INTENTION'] <= 3)
-
-    # 위 세 boolean 값을 더하면, 3점 이하인 항목의 개수가 됩니다.
-    # 그 합이 1 이상이면 '실패한 방문지' 조건에 해당합니다.
-    fail_visit_condition = (low_dgstfn + low_revisit + low_rcmdtn) >= 1
-    
-    df['IS_FAILED_VISIT'] = np.where(fail_visit_condition, 1, 0)
-
-    # VISIT_AREA_TYPE_CD가 exclude_codes에 해당하는 경우는 계산에서 제외합니다.
-    if "VISIT_AREA_TYPE_CD" in df.columns:
-        df.loc[df['VISIT_AREA_TYPE_CD'].isin(set(exclude_codes)), 'IS_FAILED_VISIT'] = np.nan
-
     # 2. 여행 단위(TRAVEL_ID)로 통계 집계
     parts = []
     
     # 만족도, 재방문/추천의향 평균 계산 (제외 코드 제외)
-    filtered = df[~df["VISIT_AREA_TYPE_CD"].isin(set(exclude_codes))].copy()
+    if "VISIT_AREA_TYPE_CD" in df.columns:
+        filtered = df[~df["VISIT_AREA_TYPE_CD"].isin(set(exclude_codes))].copy()
+    else:
+        filtered = df.copy()
+
     if not filtered.empty:
-        parts.append(filtered.groupby("TRAVEL_ID")["DGSTFN"].mean().rename("DGSTFN_AVG"))
-        parts.append(filtered.groupby("TRAVEL_ID")["REVISIT_INTENTION"].mean().rename("REVISIT_AVG"))
-        parts.append(filtered.groupby("TRAVEL_ID")["RCMDTN_INTENTION"].mean().rename("RCMDTN_AVG"))
+        if "DGSTFN" in filtered.columns:
+            parts.append(filtered.groupby("TRAVEL_ID")["DGSTFN"].mean().rename("DGSTFN_AVG"))
+        if "REVISIT_INTENTION" in filtered.columns:
+            parts.append(filtered.groupby("TRAVEL_ID")["REVISIT_INTENTION"].mean().rename("REVISIT_AVG"))
+        if "RCMDTN_INTENTION" in filtered.columns:
+            parts.append(filtered.groupby("TRAVEL_ID")["RCMDTN_INTENTION"].mean().rename("RCMDTN_AVG"))
 
-    # ------------------------------------------------------------------------------- #
-    # 타겟변수(IS_FAILED_TRIP) 작업 코드 (사용자 요청 로직 반영)
-    # ------------------------------------------------------------------------------- #
-    # IS_FAILED_VISIT가 NaN이 아닌, 즉 유효한(평가 대상인) 방문 기록만 필터링합니다.
-    valid_visits = df.dropna(subset=['IS_FAILED_VISIT'])
-
-    # 여행(TRAVEL_ID)별로 유효 방문지 수와 실패 방문지 수를 집계합니다.
-    trip_summary = valid_visits.groupby("TRAVEL_ID").agg(
-        visit_cnt=("VISIT_AREA_ID", "count"),
-        failed_trip=("IS_FAILED_VISIT", "sum")
-    )
-
-    # 전체 방문지 대비 실패 방문지 비율을 계산합니다.
-    if not trip_summary.empty:
-        trip_summary["failed_trip_rate"] = (trip_summary["failed_trip"] / trip_summary["visit_cnt"]).fillna(0)
-
-        # 실패 방문지 비율이 50% 이상이면 '실패한 여행'으로 정의합니다.
-        trip_summary["IS_FAILED_TRIP"] = (trip_summary["failed_trip_rate"] >= 0.5).astype(int)
-        parts.append(trip_summary["IS_FAILED_TRIP"])
-    # ------------------------------------------------------------------------------- #
+    if 'VISIT_AREA_TYPE_CD' in df.columns:
+        visit_area_type_mode = df.groupby('TRAVEL_ID')['VISIT_AREA_TYPE_CD'].agg(lambda x: x.mode()[0] if not x.mode().empty else np.nan).rename('VISIT_AREA_TYPE_CD')
+        parts.append(visit_area_type_mode)
     
     # 여행 기간(TRIP_DAYS) 및 이동 횟수(MOVE_CNT) 계산
     if {"VISIT_START_YMD", "VISIT_END_YMD"}.issubset(df.columns):
@@ -348,15 +337,13 @@ def preprocess_visit_area_info(
         parts.append(move_count)
 
     # 집계된 모든 통계를 하나의 데이터프레임으로 합칩니다.
+    if not parts:
+        return pd.DataFrame()
+        
     aggregated = pd.concat(parts, axis=1).reset_index()
-    
-    # 평가 대상 방문지가 없었던 여행의 경우, IS_FAILED_TRIP이 NaN으로 표시됩니다.
-    # 이 여행들은 실패하지 않은 것(0)으로 간주하여 결측치를 채웁니다.
-    if 'IS_FAILED_TRIP' in aggregated.columns:
-        aggregated['IS_FAILED_TRIP'] = aggregated['IS_FAILED_TRIP'].fillna(0).astype(int)
 
     if return_base_table:
-        return df.drop(columns=['IS_FAILED_VISIT']).reset_index(drop=True), aggregated
+        return df.reset_index(drop=True), aggregated
 
     return aggregated
 
@@ -433,18 +420,25 @@ def save_traveller_master(output_dir=None, mode="train", year=None, **preprocess
 
 
 def save_travel_table(output_dir=None, dataset_key="여행", mode="train", year=None):
-    """Save a trimmed travel table that only keeps identifiers and travel length."""
+    """Save a trimmed travel table that only keeps identifiers and travel season."""
     df = load_dataset(dataset_key, mode=mode, year=year).copy()
 
     start_date_col = "TRAVEL_START_YMD"
-    end_date_col = "TRAVEL_END_YMD"
 
-    if start_date_col in df.columns and end_date_col in df.columns:
+    if start_date_col in df.columns:
         df[start_date_col] = pd.to_datetime(df[start_date_col], errors="coerce")
-        df[end_date_col] = pd.to_datetime(df[end_date_col], errors="coerce")
-        df["TRAVEL_LENGTH"] = (df[end_date_col] - df[start_date_col]).dt.days + 1
+        
+        month = df[start_date_col].dt.month
+        season_map = {
+            1: '겨울', 2: '겨울',
+            3: '봄', 4: '봄', 5: '봄',
+            6: '여름', 7: '여름', 8: '여름',
+            9: '가을', 10: '가을', 11: '가을',
+            12: '겨울'
+        }
+        df['TRAVEL_SEASON'] = month.map(season_map)
 
-    columns_to_keep = ["TRAVEL_ID", "TRAVELER_ID", "TRAVEL_LENGTH"]
+    columns_to_keep = ["TRAVEL_ID", "TRAVELER_ID", "TRAVEL_SEASON"]
     existing_columns = [column for column in columns_to_keep if column in df.columns]
     df = df[existing_columns].copy()
 
