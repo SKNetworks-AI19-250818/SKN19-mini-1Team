@@ -13,7 +13,7 @@ VL_csv
 # *.png
 
 # pycache
-preprocessing/__pycache__/
+__pycache__/
 
 # codex
 AGENTS.md
