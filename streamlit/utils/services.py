@@ -42,7 +42,6 @@ ACT_LABEL_TO_CODE = {
 def get_model():
     
     if not os.path.exists(MODEL_PATH):
-        st.info(" 모델 파일이 없어 가데이터 예측 결과 사용")
         return None
     
     try:
