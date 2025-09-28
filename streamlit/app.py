@@ -209,7 +209,8 @@ def form_page():
             activity_type_cd=act_type,
         )
 
-        proba, _ = predict_failure(model, X)
+        proba = float(model.predict_proba(X)[:, 1][0])
+        # proba, _ = predict_failure(model, X)
         print(proba)
 
         st.session_state.result = proba
