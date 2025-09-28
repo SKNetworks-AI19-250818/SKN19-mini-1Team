@@ -229,3 +229,67 @@
     <td>이번 미니 프로젝트를 시작하며 정한 주제는 1차 프로젝트 때에 비해서 데이터의 양이 훨씬 많아 더 좋은 결과가 나올 것 같아서 기대되었습니다. 컬럼들을 정리하는데 많은 노력이 들긴 했지만, EDA 과정에 대해서 학습하기에는 정말 좋은 경험이었던 것 같습니다. 또한 지완님의 추천으로 slack이라는 클라우드 컴퓨팅 기반 협업툴을 사용해보았는데, 실시간으로 협업을 진행하는데에 있어 많은 도움이 된 것 같습니다.</td>
   </tr>
 </table>
+
+## 🚀 How to Use
+
+This project includes a command-line interface (`main.py`) to handle data preprocessing and merging.
+
+### 1. Preprocessing
+
+To preprocess the data for a specific year and mode (training/validation), use the `preprocess` command.
+
+**Usage:**
+```bash
+python main.py preprocess --year <YEAR> --mode <MODE>
+```
+
+**Examples:**
+
+- Preprocess the 2022 training data:
+  ```bash
+  python main.py preprocess --year 2022 --mode train
+  ```
+- Preprocess the 2023 validation data:
+  ```bash
+  python main.py preprocess --year 2023 --mode validation
+  ```
+
+### 2. Merging
+
+To merge the preprocessed data from all available years (2022, 2023) into a single final dataset, use the `merge` command.
+
+**Usage:**
+```bash
+python main.py merge --mode <MODE>
+```
+
+**Examples:**
+
+- Merge all preprocessed training data:
+  ```bash
+  python main.py merge --mode train
+  ```
+- Merge all preprocessed validation data:
+  ```bash
+  python main.py merge --mode validation
+  ```
+
+### 3. ML Preprocessing
+
+To run the ML-specific preprocessing on the final dataset for a specific mode, use the `ml` command. This will generate a `travel_ml.csv` file in the corresponding `data/<mode>/final/` directory.
+
+**Usage:**
+```bash
+python main.py ml --mode <MODE>
+```
+
+**Examples:**
+
+- Preprocess the training data for ML:
+  ```bash
+  python main.py ml --mode train
+  ```
+- Preprocess the validation data for ML:
+  ```bash
+  python main.py ml --mode validation
+  ```
