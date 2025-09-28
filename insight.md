@@ -1,0 +1,16 @@
+- **새로운 정보 필**
+    - 예: `활동횟수/이동횟수`, `숙박일수 대비 활동비율`, `여행 기간 주말 포함 여부`, `출발일/종료일의 계절·휴일 플래그`
+- **타겟 불균형 최적화**
+    - `IMBALANCE_MODE=auto_balanced` 유지 + `class_weights` 세밀 조정
+    - 단순 threshold 튜닝(f1) → **cost-sensitive loss** 적용 고려
+- **카테고리형 변수 처리 고도화**
+    - 단순 one-hot보다 CatBoost의 카테고리형 변수 지원 적극 활용
+- **시간/날짜 변수 활용 강화**
+    - `TRAVEL_START_MONTH`, `TRAVEL_END_MONTH` 외에
+        - **여행 길이, 계절 구분, 평일/주말 비율** 추가
+        - `activity_history_rows`와 기간 변수 결합 → “하루당 평균 활동 수” 생성
+- **특징 중요도 재활용**
+    - 중요도가 낮은 변수 (`TRAVEL_LIKE_SIDO_1/2/3` 등) 제거
+- **Threshold 튜닝 전략 고도화**
+    - 단순 f1 기준 → **비즈니스 목적** 맞춘 Precision/Recall trade-off 설정
+    - ROC 커브 기반 최적 threshold 탐색 → FPR/TPR 목표치 맞추기

@@ -219,50 +219,50 @@ def build_final_dataset(mode="train"):
     visit_summary = read_preprocessed_csv_for_all_years("visit_area_summary.csv", mode=mode)
     travel_table = read_preprocessed_csv_for_all_years("travel.csv", mode=mode)
 
-    # Aggregate data
-    activity_consume_summary = aggregate_activity_consumption(activity_consumption)
-    activity_history_summary = aggregate_activity_history(activity_history)
-    lodging_summary = aggregate_lodging(lodging)
-    visit_summary_ready = prepare_visit_summary(visit_summary)
+    # # Aggregate data
+    # activity_consume_summary = aggregate_activity_consumption(activity_consumption)
+    # activity_history_summary = aggregate_activity_history(activity_history)
+    # lodging_summary = aggregate_lodging(lodging)
+    # visit_summary_ready = prepare_visit_summary(visit_summary)
 
-    # Merge features
-    travel_features = expand_travel_categorical_codes(travel_table.copy())
-    travel_features = travel_features.merge(activity_consume_summary, on="TRAVEL_ID", how="left")
-    travel_features = travel_features.merge(activity_history_summary, on="TRAVEL_ID", how="left")
-    travel_features = travel_features.merge(lodging_summary, on="TRAVEL_ID", how="left")
-    travel_features = travel_features.merge(visit_summary_ready, on="TRAVEL_ID", how="left")
+    # # Merge features (skip PURPOSE one-hot expansion per request)
+    # travel_features = travel_table.copy()
+    # travel_features = travel_features.merge(activity_consume_summary, on="TRAVEL_ID", how="left")
+    # travel_features = travel_features.merge(activity_history_summary, on="TRAVEL_ID", how="left")
+    # travel_features = travel_features.merge(lodging_summary, on="TRAVEL_ID", how="left")
+    # travel_features = travel_features.merge(visit_summary_ready, on="TRAVEL_ID", how="left")
 
-    # Fill missing values
-    if "activity_payment_sum" in travel_features.columns:
-        activity_median = travel_features["activity_payment_sum"].median()
-        travel_features["activity_payment_sum"] = travel_features["activity_payment_sum"].fillna(activity_median)
-    if "lodging_payment_sum" in travel_features.columns:
-        lodging_median = travel_features["lodging_payment_sum"].median()
-        travel_features["lodging_payment_sum"] = travel_features["lodging_payment_sum"].fillna(lodging_median)
+    # # Fill missing values
+    # if "activity_payment_sum" in travel_features.columns:
+    #     activity_median = travel_features["activity_payment_sum"].median()
+    #     travel_features["activity_payment_sum"] = travel_features["activity_payment_sum"].fillna(activity_median)
+    # if "lodging_payment_sum" in travel_features.columns:
+    #     lodging_median = travel_features["lodging_payment_sum"].median()
+    #     travel_features["lodging_payment_sum"] = travel_features["lodging_payment_sum"].fillna(lodging_median)
     
-    numeric_fill_zero = [
-        "activity_payment_count", "activity_store_count", "activity_history_rows",
-        "activity_type_unique", "lodging_payment_count", "lodging_store_count",
-    ]
-    for column in numeric_fill_zero:
-        if column in travel_features.columns:
-            travel_features[column] = travel_features[column].fillna(0)
+    # numeric_fill_zero = [
+    #     "activity_payment_count", "activity_store_count", "activity_history_rows",
+    #     "activity_type_unique", "lodging_payment_count", "lodging_store_count",
+    # ]
+    # for column in numeric_fill_zero:
+    #     if column in travel_features.columns:
+    #         travel_features[column] = travel_features[column].fillna(0)
 
-    # Final type casting
-    count_columns = [
-        "activity_payment_count", "activity_store_count", "activity_history_rows",
-        "activity_type_unique", "lodging_payment_count", "lodging_store_count",
-    ]
-    for column in count_columns:
-        if column in travel_features.columns:
-            travel_features[column] = travel_features[column].astype(int)
-    sum_columns = ["activity_payment_sum", "lodging_payment_sum"]
-    for column in sum_columns:
-        if column in travel_features.columns:
-            travel_features[column] = travel_features[column].round().astype(int)
+    # # Final type casting
+    # count_columns = [
+    #     "activity_payment_count", "activity_store_count", "activity_history_rows",
+    #     "activity_type_unique", "lodging_payment_count", "lodging_store_count",
+    # ]
+    # for column in count_columns:
+    #     if column in travel_features.columns:
+    #         travel_features[column] = travel_features[column].astype(int)
+    # sum_columns = ["activity_payment_sum", "lodging_payment_sum"]
+    # for column in sum_columns:
+    #     if column in travel_features.columns:
+    #         travel_features[column] = travel_features[column].round().astype(int)
 
-    # Final merge with traveller master
-    final_df = travel_features.merge(traveller_master, on="TRAVELER_ID", how="left")
+    # # Final merge with traveller master
+    # final_df = travel_features.merge(traveller_master, on="TRAVELER_ID", how="left")
 
     # ---------------------------------------------------------------------
     # Complex feature engineering (from complex_features.md)
@@ -279,34 +279,34 @@ def build_final_dataset(mode="train"):
         denom_safe = denom_safe.where(denom_safe > 0, other=1)
         return numer.fillna(0) / denom_safe
 
-    if "activity_payment_count" in final_df.columns and "visit_trip_days" in final_df.columns:
-        final_df["activity_per_day"] = _safe_div(
-            final_df["activity_payment_count"].astype(float),
-            final_df["visit_trip_days"].astype(float),
-        )
+    # if "activity_payment_count" in final_df.columns and "visit_trip_days" in final_df.columns:
+    #     final_df["activity_per_day"] = _safe_div(
+    #         final_df["activity_payment_count"].astype(float),
+    #         final_df["visit_trip_days"].astype(float),
+    #     )
 
-    if (
-        "activity_payment_sum" in final_df.columns
-        and "lodging_payment_sum" in final_df.columns
-        and "visit_trip_days" in final_df.columns
-    ):
-        total_spend = final_df["activity_payment_sum"].astype(float).fillna(0) + \
-                      final_df["lodging_payment_sum"].astype(float).fillna(0)
-        final_df["spending_per_day"] = _safe_div(
-            total_spend,
-            final_df["visit_trip_days"].astype(float),
-        )
+    # if (
+    #     "activity_payment_sum" in final_df.columns
+    #     and "lodging_payment_sum" in final_df.columns
+    #     and "visit_trip_days" in final_df.columns
+    # ):
+    #     total_spend = final_df["activity_payment_sum"].astype(float).fillna(0) + \
+    #                   final_df["lodging_payment_sum"].astype(float).fillna(0)
+    #     final_df["spending_per_day"] = _safe_div(
+    #         total_spend,
+    #         final_df["visit_trip_days"].astype(float),
+    #     )
 
-    if "activity_payment_sum" in final_df.columns and "lodging_payment_sum" in final_df.columns:
-        final_df["activity_to_lodging_ratio"] = final_df["activity_payment_sum"].astype(float).fillna(0) / (
-            final_df["lodging_payment_sum"].astype(float).fillna(0) + 1.0
-        )
+    # if "activity_payment_sum" in final_df.columns and "lodging_payment_sum" in final_df.columns:
+    #     final_df["activity_to_lodging_ratio"] = final_df["activity_payment_sum"].astype(float).fillna(0) / (
+    #         final_df["lodging_payment_sum"].astype(float).fillna(0) + 1.0
+    #     )
 
-    if "TRAVEL_COMPANIONS_NUM" in final_df.columns and "FAMILY_MEMB" in final_df.columns:
-        final_df["companions_per_family"] = _safe_div(
-            final_df["TRAVEL_COMPANIONS_NUM"].astype(float),
-            final_df["FAMILY_MEMB"].astype(float),
-        )
+    # if "TRAVEL_COMPANIONS_NUM" in final_df.columns and "FAMILY_MEMB" in final_df.columns:
+    #     final_df["companions_per_family"] = _safe_div(
+    #         final_df["TRAVEL_COMPANIONS_NUM"].astype(float),
+    #         final_df["FAMILY_MEMB"].astype(float),
+    #     )
 
     # Drop identifier after feature engineering
     if "TRAVELER_ID" in final_df.columns:
@@ -316,11 +316,18 @@ def build_final_dataset(mode="train"):
     sgg_cols_to_drop = ["TRAVEL_LIKE_SGG_1", "TRAVEL_LIKE_SGG_2", "TRAVEL_LIKE_SGG_3"]
     final_df = final_df.drop(columns=sgg_cols_to_drop, errors="ignore")
 
+    # Drop specific visit satisfaction-related columns per request
+    cols_to_drop = [
+        "visit_dgstfn_avg",
+        "visit_revisit_avg",
+        "visit_rcmdtn_avg",
+    ]
+    final_df = final_df.drop(columns=cols_to_drop, errors="ignore")
+
     # remove null
     final_df = final_df.dropna()
 
-    # After final merge: apply MIS-based one-hot encoding for TRAVEL_PURPOSE and TRAVEL_MISSION_CHECK
-    final_df = apply_mis_one_hot(final_df)
+    # Skip MIS-based one-hot encoding for PURPOSE and MISSION CHECK (removed by request)
 
     return final_df
 

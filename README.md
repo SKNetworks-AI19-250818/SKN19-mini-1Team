@@ -44,14 +44,14 @@
 
 ## 📂 필수 산출물
 
-| 테이블 | 데이터(폴더) | ipynb |
-| ----- | ----- | ----- |
-| 통합데이터 | [통합데이터](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/tree/develop/integrated_data/prep_data) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/tree/develop/integrated_data/prep_notebook) |
-| 여행마스터 | [여행마스터](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/traveller_master.csv) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%EC%97%AC%ED%96%89%EA%B0%9D%EB%8D%B0%EC%9D%B4%ED%84%B0%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb) |
-| 숙박소비내역 | [숙박소비내역](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/lodging_consumption.csv) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%EC%88%99%EB%B0%95%EC%86%8C%EB%B9%84%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb) |
-| 방문지정보 | [방문지정보](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/visit_area_base.csv) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%EC%97%AC%ED%96%89%EB%B0%A9%EB%AC%B8%EC%A7%80%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb) |
-| 활동내역 | [활동내역](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/activity_history.csv) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%ED%99%9C%EB%8F%99%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb) |
-| 활동소비내역 | [활동소비내역](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/activity_consumption.csv) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%ED%99%9C%EB%8F%99%EC%86%8C%EB%B9%84%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb) |
+| 테이블       | 데이터(폴더)                                                                                                                               | ipynb                                                                                                                                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 통합데이터   | [통합데이터](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/tree/develop/integrated_data/prep_data)                            | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/tree/develop/integrated_data/prep_notebook)                                                                                                   |
+| 여행마스터   | [여행마스터](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/traveller_master.csv)       | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%EC%97%AC%ED%96%89%EA%B0%9D%EB%8D%B0%EC%9D%B4%ED%84%B0%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb)           |
+| 숙박소비내역 | [숙박소비내역](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/lodging_consumption.csv)  | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%EC%88%99%EB%B0%95%EC%86%8C%EB%B9%84%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb)          |
+| 방문지정보   | [방문지정보](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/visit_area_base.csv)        | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%EC%97%AC%ED%96%89%EB%B0%A9%EB%AC%B8%EC%A7%80%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb) |
+| 활동내역     | [활동내역](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/activity_history.csv)         | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%ED%99%9C%EB%8F%99%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb)                            |
+| 활동소비내역 | [활동소비내역](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_data/activity_consumption.csv) | [전처리](https://github.com/SKNetworks-AI19-250818/SKN19-mini-1Team/blob/develop/integrated_data/prep_notebook/%ED%99%9C%EB%8F%99%EC%86%8C%EB%B9%84%EB%82%B4%EC%97%AD_%EC%A0%84%EC%B2%98%EB%A6%AC.ipynb)          |
 
 ## 📂 프로젝트 구조
 
@@ -100,14 +100,15 @@
 
 ## 🔧 기술 스택
 
-| 분류 | 사용 도구 |
-| ----- | ----- |
-| 언어 및 환경 | ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) |
-| 데이터 전처리 | ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white) ![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white) |
-| 시각화 | ![Seaborn](https://img.shields.io/badge/Seaborn-3776AB?style=for-the-badge&logo=seaborn&logoColor=white) ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black) |
-| 협업 | ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white) ![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white) |
+| 분류          | 사용 도구                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 언어 및 환경  | ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)                                                                                                                                                                                                                                                                                                                           |
+| 데이터 전처리 | ![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white) ![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)                                                                                                                                                                                                           |
+| 시각화        | ![Seaborn](https://img.shields.io/badge/Seaborn-3776AB?style=for-the-badge&logo=seaborn&logoColor=white) ![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)                                                                                                                                                                                                |
+| 협업          | ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white) ![Slack](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white) |
 
 ---
+
 ---
 
 <br/>
@@ -147,15 +148,16 @@
 ![슬라이드14](ppt/슬라이드14.JPG)
 ![슬라이드15](ppt/슬라이드15.JPG)
 
-## 💡 인사이트 요약 
+## 💡 인사이트 요약
+
 - 여행객의 데모그라피에 따라 여행 규모(연령·동반인원·기간·예상등)가 뚜렷하다.
 - 일반 숙소 비중이 크지만 이색 숙소도 분포해 숙박 자체가 목적이 아닌 체험형 수요가 보인다.
 - 여행객 특성(동반유형·이동횟수·총경비등)이 방문지 선호와 여행 만족도에 어떤 영향을 주는지 확인할 분석 가치가 있다.
-- 활동 유형 조합과 지출·예약 패턴을 분석하여 여행테마·소비성향을 분류함으로써, 
-- 출발 전 재미로 눌러보는 
-"예측 확인 게임(Like 오늘의 운세는?)"에 반영해 "여행이 망할 확률"을 가볍게 보여주며 간단한 주의 포인트를 함께 제시해주는데 활용해보고자 한다.
+- 활동 유형 조합과 지출·예약 패턴을 분석하여 여행테마·소비성향을 분류함으로써,
+- 출발 전 재미로 눌러보는
+  "예측 확인 게임(Like 오늘의 운세는?)"에 반영해 "여행이 망할 확률"을 가볍게 보여주며 간단한 주의 포인트를 함께 제시해주는데 활용해보고자 한다.
 
-## 📖 통합 데이터 개요 · EDA 
+## 📖 통합 데이터 개요 · EDA
 
 ![슬라이드17](ppt/슬라이드17.JPG)
 ![슬라이드18](ppt/슬라이드18.JPG)
@@ -166,6 +168,7 @@
 ![슬라이드20](ppt/슬라이드20.JPG)
 
 ---
+
 ---
 
 <br/>
@@ -175,7 +178,7 @@
 <details>
 <summary>브랜딩도 결과의 일부! 포스터·팀 캐릭터로 메시지 명확화</summary>
 
-- 팀에 보탬이 되고자 떠오르는 아이디어들을 메모해 두었고 밈과 버무려 포스터를제작 해보았습니다. 팀원들이 재미있게 생각해주셔서 감사했습니다!  `by 김성욱`
+- 팀에 보탬이 되고자 떠오르는 아이디어들을 메모해 두었고 밈과 버무려 포스터를제작 해보았습니다. 팀원들이 재미있게 생각해주셔서 감사했습니다! `by 김성욱`
 
 ---
 
@@ -229,67 +232,3 @@
     <td>이번 미니 프로젝트를 시작하며 정한 주제는 1차 프로젝트 때에 비해서 데이터의 양이 훨씬 많아 더 좋은 결과가 나올 것 같아서 기대되었습니다. 컬럼들을 정리하는데 많은 노력이 들긴 했지만, EDA 과정에 대해서 학습하기에는 정말 좋은 경험이었던 것 같습니다. 또한 지완님의 추천으로 slack이라는 클라우드 컴퓨팅 기반 협업툴을 사용해보았는데, 실시간으로 협업을 진행하는데에 있어 많은 도움이 된 것 같습니다.</td>
   </tr>
 </table>
-
-## 🚀 How to Use
-
-This project includes a command-line interface (`main.py`) to handle data preprocessing and merging.
-
-### 1. Preprocessing
-
-To preprocess the data for a specific year and mode (training/validation), use the `preprocess` command.
-
-**Usage:**
-```bash
-python main.py preprocess --year <YEAR> --mode <MODE>
-```
-
-**Examples:**
-
-- Preprocess the 2022 training data:
-  ```bash
-  python main.py preprocess --year 2022 --mode train
-  ```
-- Preprocess the 2023 validation data:
-  ```bash
-  python main.py preprocess --year 2023 --mode validation
-  ```
-
-### 2. Merging
-
-To merge the preprocessed data from all available years (2022, 2023) into a single final dataset, use the `merge` command.
-
-**Usage:**
-```bash
-python main.py merge --mode <MODE>
-```
-
-**Examples:**
-
-- Merge all preprocessed training data:
-  ```bash
-  python main.py merge --mode train
-  ```
-- Merge all preprocessed validation data:
-  ```bash
-  python main.py merge --mode validation
-  ```
-
-### 3. ML Preprocessing
-
-To run the ML-specific preprocessing on the final dataset for a specific mode, use the `ml` command. This will generate a `travel_ml.csv` file in the corresponding `data/<mode>/final/` directory.
-
-**Usage:**
-```bash
-python main.py ml --mode <MODE>
-```
-
-**Examples:**
-
-- Preprocess the training data for ML:
-  ```bash
-  python main.py ml --mode train
-  ```
-- Preprocess the validation data for ML:
-  ```bash
-  python main.py ml --mode validation
-  ```
