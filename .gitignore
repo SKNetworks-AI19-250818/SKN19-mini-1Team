@@ -2,8 +2,28 @@
 TL_gps_data/
 VL_gps_data/
 
+# 원본 데이터
+TL_csv
+VL_csv
+
 # MAC os default file
 .DS_Store
 
-# image file
+# # image file
 *.png
+
+# pycache
+__pycache__/
+
+# codex
+AGENTS.md
+
+# 환경변수
+.env
+
+# Catboost
+catboost_info/
+artifacts/
+
+# 산출물
+ML/outputs/**
