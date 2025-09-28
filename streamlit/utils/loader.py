@@ -76,24 +76,3 @@ def audio_to_base64(path):
         data = f.read()
     b64 = base64.b64encode(data).decode("utf-8")
     return f"data:audio/wav;base64,{b64}"
-
-# background 음악을 끊김 없이 삽입하는 HTML iframe 방식
-def insert_background_audio(audio_data_uri):
-    html = f"""
-    <html>
-      <body style="margin:0; padding:0; overflow:hidden;">
-        <audio autoplay loop id="bg-music" style="display:none">
-          <source src="{audio_data_uri}" type="audio/wav">
-        </audio>
-        <script>
-          const audio = document.getElementById('bg-music');
-          if (audio) {{
-            audio.play().catch((e) => {{
-              console.log("Autoplay failed:", e);
-            }});
-          }}
-        </script>
-      </body>
-    </html>
-    """
-    components.html(html, height=0, width=0, scrolling=False)

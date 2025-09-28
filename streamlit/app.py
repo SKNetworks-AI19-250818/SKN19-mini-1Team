@@ -76,7 +76,7 @@ def form_page():
                 """, unsafe_allow_html=True)
     
     # OTTF 배경음악 
-    st.audio(str(AUDIO_DIR/"OTTF_INTRO_V2.wav"), format="audio/mp3", start_time=0)
+    st.audio(str(AUDIO_DIR/"OTTF_INTRO_V2.wav"), format="audio/wav", start_time=0, autoplay=False)
     
     st.session_state.setdefault("show_form", False)
     if not st.session_state.show_form:
@@ -345,7 +345,9 @@ def result_page():
                 😱 이번 여행, 망할 확률 <b>{fail_percent}%</b>! 플랜 B 준비하세요!!<br>
             </div>
             """, unsafe_allow_html=True
-        )
+        )       
+        st.audio(str(AUDIO_DIR/"king_fail.wav"), format="audio/wav", autoplay=True)
+
     elif fail_percent > 40:
         st.markdown(
             f"""
@@ -355,6 +357,8 @@ def result_page():
             </div>
             """, unsafe_allow_html=True
         )
+        st.audio(str(AUDIO_DIR/"fail.wav"), format="audio/wav", autoplay=True)
+   
     else:
         st.markdown(
             f"""
@@ -364,7 +368,8 @@ def result_page():
             </div>
             """, unsafe_allow_html=True
         )
-
+        st.audio(str(AUDIO_DIR/"success.wav"), format="audio/wav", autoplay=True)
+    
     st.markdown("<br>", unsafe_allow_html=True)
 
     col1, _, col3 = st.columns([1, 1, 1])
