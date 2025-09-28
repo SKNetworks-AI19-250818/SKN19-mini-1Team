@@ -3,6 +3,7 @@ import streamlit as st
 from pathlib import Path
 import base64
 import streamlit.components.v1 as components
+import pathlib
 
 def load_css(file_name: str):
     """
@@ -56,6 +57,19 @@ def render_clouds(image_path: str, count=5, top_range=(5, 80), size_range=(120, 
     ])
 
     st.markdown(clouds, unsafe_allow_html=True)
+
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+ASSETS_DIR = BASE_DIR / "assets" / "img"
+SEASON_IMAGES = {
+    "봄": ASSETS_DIR/"sakura.png",
+    "여름": ASSETS_DIR/"watermelon.png",
+    "가을": ASSETS_DIR/"autumn.png",
+    "겨울": ASSETS_DIR/"snowflake.png",
+}
+
+def render_season_clouds(season: str, count=5, top_range=(5, 80), size_range=(120, 240)):
+    path = SEASON_IMAGES[season]
+    render_clouds(path, count=count, top_range=top_range, size_range=size_range)
 
 def audio_to_base64(path):
     with open(path, "rb") as f:
