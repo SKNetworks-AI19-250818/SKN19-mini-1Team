@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import pathlib
 import joblib
 import time
 import os
@@ -8,8 +9,6 @@ import os
 # ------------------------------
 # Lite Model 
 # ------------------------------
-MODEL_PATH = "models/catboost_best_model_lite.joblib"
-
 # 모델 입력 피처
 LITE_FEATURES = [
     "TRIP_DAYS",
@@ -39,13 +38,10 @@ ACT_LABEL_TO_CODE = {
 }
 
 @st.cache_resource
-def get_model():
-    
-    if not os.path.exists(MODEL_PATH):
-        return None
-    
+def get_model(path):
     try:
-        return joblib.load(MODEL_PATH)
+        model = joblib.load(path)
+        return model
     except Exception as e:
         st.warning(f"모델 로드 실패: {e}")
         return None

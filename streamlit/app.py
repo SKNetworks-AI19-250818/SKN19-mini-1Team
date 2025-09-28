@@ -15,6 +15,7 @@ BASE_DIR = pathlib.Path(__file__).resolve().parent
 STYLE_DIR = BASE_DIR / "style"
 ASSETS_DIR = BASE_DIR / "assets" / "img"
 AUDIO_DIR = BASE_DIR / "assets" / "audio"
+MODEL_PATH = BASE_DIR / "models" / "catboost_best_model_lite.joblib"
 
 #------------------------------
 # 기본 설정 & 예측 모델
@@ -198,7 +199,7 @@ def form_page():
 
     # -- 모델 예측 -------------------------
     if check_predict:
-        model = get_model()
+        model = get_model(MODEL_PATH)
         if model is None:
             st.error("Opps! 잠시 후 다시 시도해주세요.")
         
