@@ -77,7 +77,6 @@ pyparsing==3.2.4
 python-dateutil==2.9.0.post0
 python-json-logger==3.3.0
 pytz==2025.2
-pywin32==311
 pywinpty==3.0.0
 PyYAML==6.0.2
 pyzmq==27.1.0

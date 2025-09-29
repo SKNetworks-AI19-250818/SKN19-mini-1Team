@@ -35,3 +35,6 @@ ML/outputs/**
 !preprocessing/
 !preprocessing/img/
 !preprocessing/img/*.png
+
+# 모델 
+*.joblib
