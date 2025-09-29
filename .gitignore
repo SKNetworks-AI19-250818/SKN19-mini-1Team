@@ -10,13 +10,25 @@ VL_csv
 .DS_Store
 
 # # image file
-# *.png
+*.png
 
 # pycache
-preprocessing/__pycache__/
+__pycache__/
 
 # codex
 AGENTS.md
 
 # 환경변수
 .env
+
+# Catboost
+catboost_info/
+artifacts/
+
+# 산출물
+ML/outputs/**
+
+# allow README images
+!preprocessing/
+!preprocessing/img/
+!preprocessing/img/*.png
