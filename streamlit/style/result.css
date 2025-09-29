@@ -1,5 +1,30 @@
 /* result.css - 결과 페이지 전용 */
 
+/* 타이틀 스타일 */
+h2.intro-title {
+    text-align: center;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin: 4px 0 8px 0;
+    padding-bottom: 0;
+    font-size: clamp(2.3rem, 5vw, 3.2rem);
+    line-height: 1.1;
+    background: linear-gradient(90deg, #78B9EB 0%, #4cc9f0 30%, #E76F51 70%, #F4A261 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 0.3px rgba(0,0,0,0.05);
+}
+
+/* 서브 타이틀 설명 */
+p.intro-subtext {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #495057;
+    margin-top: 4px;
+    margin-bottom: 20px;
+}
+
 .result-card {
     text-align: center;
     font-size: 1.2rem;
@@ -49,15 +74,15 @@
 
 /* 공유 버튼도 다른 버튼과 동일한 크기 */
 .stButton button[kind="secondary"] {
-    background: transparent !important;
-    color: #4cc9f0 !important;
-    border: 2px solid #4cc9f0 !important;
+    background-color: #4cc9f0 !important;
+    color: white !important;
     border-radius: 10px !important;
     width: 100% !important;
+    height: 80px;
     padding: 0.7em 0 !important;
 }
 .stButton button[kind="secondary"]:hover {
-    background-color: #4cc9f0 !important;
+    background-color: #006DF0 !important;
     color: white !important;
 }
 

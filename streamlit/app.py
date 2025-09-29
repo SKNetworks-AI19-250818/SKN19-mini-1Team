@@ -7,13 +7,16 @@ import joblib
 import time
 import os
 #------------------------------
-# 커스텀 모듈
+# 커스텀 모듈 & 경로
 #------------------------------
-from utils.loader import load_css, img_to_base64, render_clouds, render_image
+from utils.loader import load_css, img_to_base64, render_clouds, render_image, render_season_clouds
 from utils.services import *
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 STYLE_DIR = BASE_DIR / "style"
 ASSETS_DIR = BASE_DIR / "assets" / "img"
+AUDIO_DIR = BASE_DIR / "assets" / "audio"
+MODEL_PATH = BASE_DIR / "models" 
+
 #------------------------------
 # 기본 설정 & 예측 모델
 #------------------------------
@@ -44,24 +47,7 @@ def intro_page():
         unsafe_allow_html=True
     )
 
-    render_image(str(ASSETS_DIR / "rating-color.png"), css_class="intro-main-image")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(
-        """
-        <div class="intro-card">
-            <div class="intro-card-icon">⚠️</div>
-            <div class="intro-card-text">
-                <p>
-                    여행 계획을 입력하면 <b>망한 여행 확률</b>을 계산해 드립니다.<br><br>
-                    결과는 살짝 약올릴 수도 있으니 <b>마음의 준비</b>를 하고 보세요 😏<br><br>
-                    높은 확률이 나온다면... <b>지금이라도 플랜 B</b>를 준비하세요!
-                </p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    render_image(str(ASSETS_DIR / "rating-color.png"), css_class="intro-main-image", width=300)
 
     st.markdown("<br>", unsafe_allow_html=True)
     b64_arrow = img_to_base64(str(ASSETS_DIR / "direction-arrow.png"))
@@ -84,55 +70,235 @@ def intro_page():
 def form_page():
 
     load_css(str(STYLE_DIR / "form.css"))
-    render_clouds(str(ASSETS_DIR / "cloudy.png"), count=5, top_range=(5, 80), size_range=(120, 240))
-
-    st.markdown("<h2 class='page-title'>✏️ 여행 정보 입력</h2>", unsafe_allow_html=True)
-    st.markdown("<p class='page-subtext'>아래 정보를 입력하면 당신의 여행 운명을 알려드립니다.</p>", unsafe_allow_html=True)
-
-    with st.form("travel_form"):
-        companion = st.selectbox("동반자 유형", ["혼자", "친구", "연인", "가족", "회사"])
-        people = st.slider("동반 인원", 1, 10, 2)
-        days = st.slider("여행 일수", 1, 14, 3)
-        lodging = st.selectbox("숙소 유형", ["호텔", "모텔", "펜션", "캠핑", "당일치기"])
-        moves = st.slider("이동 횟수", 0, 10, 2)
-        budget = st.slider(
-            "예상 지출 (만원)",
-            min_value=0,
-            max_value=1000,
-            value=50,
-            step=1,
-            help="여행 전체 예상 비용을 선택하세요." 
+    
+    st.markdown("""
+                <h2 class='intro-title'>나의 여행 운명 테스트</h2>
+                """, unsafe_allow_html=True)
+    
+    # OTTF 배경음악 
+    st.audio(str(AUDIO_DIR/"OTTF_INTRO_V2.wav"), format="audio/wav", start_time=0, autoplay=False)
+    
+    st.session_state.setdefault("show_form", False)
+    if not st.session_state.show_form:
+        st.markdown(
+            """
+            <div class="intro-card">
+                <div class="intro-card-icon">⚠️</div>
+                <div class="intro-card-text">
+                    <p>
+                        여행 계획을 입력하면 <b>망한 여행 확률</b>을 계산해 드립니다.<br><br>
+                        결과는 살짝 약올릴 수도 있으니 <b>마음의 준비</b>를 하고 보세요 😏<br><br>
+                        높은 확률이 나온다면... <b>지금이라도 플랜 B</b>를 준비하세요!
+                    </p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-        # 버튼 그룹
-        col1, col2, col3 = st.columns([1, 1.5, 1])
-        with col1:
-            back_clicked = st.form_submit_button("⬅ 처음으로")
-        with col2:
-            predict_clicked = st.form_submit_button("🔮 여행 운명 확인하기")
-        with col3:
-            reset_clicked = st.form_submit_button("🔄 초기화")
+        if st.button("시작", use_container_width=True):
+            st.session_state.show_form = True
+            st.rerun()
+        return
+    
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        # 버튼 동작
-        if back_clicked:
+    # -- 상태 기본값 -------------------------
+    st.session_state.setdefault("gender", "남")
+    st.session_state.setdefault("age_grp", "30대")
+    st.session_state.setdefault("trip_option", "2박 3일")
+    st.session_state.setdefault("trip_days_long", 5)
+    st.session_state.setdefault("act_ui", "🍽️ 맛집 탐방")
+    
+    # -- 모델버전선택 -------------------------
+    model_versions = {
+            "model_v1": MODEL_PATH/"catboost_best_model_lite.joblib",
+            "model_v2": MODEL_PATH/"catboost_best_model_lite_v2.joblib",
+        }
+    default_version = "model_v1"
+
+    PLAN_CHOICES = ["간단한계획", "꼼꼼한계획"]
+    display_to_key = {
+        "간단한계획": "model_v1",
+        "꼼꼼한계획": "model_v2",
+    }
+    
+    key_to_display = {v: k for k, v in display_to_key.items()}
+    default_display = key_to_display.get(default_version, "간단한계획")
+    
+    plan_display = st.selectbox("어떤 스타일로 여행을 평가해볼까요?",
+                                options=PLAN_CHOICES,
+                                index=PLAN_CHOICES.index(default_display),
+                                help="• 간단한계획: 핵심 몇 가지만 빠르게 입력해 가볍게 예측\n"
+                                     "• 꼼꼼한계획: 입력 항목을 더 받아 정밀하게 예측"
+                                )
+    st.caption("Tip) 빠른 체험은 ‘간단한계획’, 정확도를 높이려면 ‘꼼꼼한계획’을 선택하세요.")
+
+    model_choice = display_to_key[plan_display]
+    model_path = model_versions[model_choice]
+    input_features = MODEL_FEATURES[model_choice]
+
+    # -- 여행계절 -------------------------
+    default_bg = str(ASSETS_DIR / "cloudy.png")      
+    season = None
+    if "SEASON" in input_features:
+        season = st.radio(
+            "여행 계절",
+            ["봄", "여름", "가을", "겨울"],
+            horizontal=True,
+            key="season_ui"
+        )
+
+        if season:
+            render_season_clouds(
+                season=season,
+                count=5, top_range=(5, 80), size_range=(120, 240)
+            )
+        else:
+            render_clouds(default_bg, count=5, top_range=(5, 80), size_range=(120, 240))
+    else:
+        render_clouds(default_bg, count=5, top_range=(5, 80), size_range=(120, 240))
+
+    # -- 성별&연령대 -------------------------
+    gender = st.radio(
+        "당신의 성별은 무엇인가요?",
+        ["남", "여"],
+        horizontal=True,
+        key="gender"
+    )
+    age_grp = st.radio(
+        "당신의 연령대를 선택해주세요.",
+        ["10대", "20대", "30대", "40대", "50대 이상"],
+        horizontal=True,
+        key="age_grp"
+    )
+
+    # -- 여행기간 -------------------------
+    trip_option = st.radio(
+        "여행기간은 얼마나 되나요?"
+        , ["당일치기", "1박 2일", "2박 3일", "3박 4일", "장기 여행 (직접 입력)"]
+        , horizontal=True
+        , key="trip_option"
+    )
+
+    if trip_option == "장기 여행 (직접 입력)":
+        trip_days_long = st.slider(
+            "여행 일수를 선택하세요(5~30일)",
+            min_value=5, max_value=30, step=1, key="trip_days_long"
+        )
+        trip_days = int(trip_days_long)
+    else:
+        trip_map = {"당일치기": 1, "1박 2일": 2, "2박 3일": 3, "3박 4일": 4}
+        trip_days = trip_map[trip_option]
+
+    # -- 동반인원 -------------------------
+    companions_num = None
+    if "TRAVEL_COMPANIONS_NUM" in input_features:
+        companions_num = st.slider(
+            "동반 인원수(본인 제외)",
+            min_value=0, max_value=10, value=0, step=1, key="companions_num_ui"
+        )
+
+    # -- 활동유형 -------------------------
+    ACT_UI_LABELS = {
+        "🍽️ 맛집 탐방": "취식",
+        "🛍️ 쇼핑 여행": "쇼핑",
+        "🎨 체험 액티비티": "체험",
+        "🚶 걷기/투어": "산책",
+        "🛌 힐링 여행": "휴식",
+        "🗂 기타 활동": "기타",
+        "🚌 이동이 많은 여행": "이동",
+        "❌ 계획 없음": "없음",
+    }
+
+    ui_keys = list(ACT_UI_LABELS.keys())
+    act_ui = st.radio(
+        "이번 여행에서 가장 많이 할 활동을 선택해주세요."
+        , ui_keys
+        , horizontal=True
+        , key="act_ui"
+    )
+    act_type = ACT_UI_LABELS[act_ui]
+    
+    # -- 소비성향 -------------------------
+    payment_persona = None
+    if "payment_persona" in input_features:
+        payment_persona = st.radio(
+            "소비 성향",
+            ["낮음(low)", "중간(med)", "높음(high)"],
+            horizontal=True,
+            key="payment_persona_ui"
+        )
+
+        if payment_persona:
+            if "low" in payment_persona: payment_persona = "low"
+            elif "high" in payment_persona: payment_persona = "high"
+            else: payment_persona = "med"
+
+    # -- 입력정보확인 -------------------------
+    def nights_days_label(days: int) -> str:
+        if days <= 1: return "당일치기 (1일)"
+        return f"{days-1}박 {days}일"
+    
+    extra_bits = []
+    if "payment_persona" in input_features and payment_persona:
+        extra_bits.append(f"소비성향: {payment_persona}")
+
+    if "TRAVEL_COMPANIONS_NUM" in input_features and companions_num is not None:
+        extra_bits.append(f"동반인원: {companions_num}명")
+
+    if "SEASON" in input_features and season:
+        extra_bits.append(f"계절: {season}")
+    
+    extra_text = (" | " + " | ".join(extra_bits)) if extra_bits else ""
+
+    st.markdown(
+        f"""
+        <div class="form-preview-card">
+            <b>입력 정보 확인</b><br>
+            성별: {gender} | 연령대: {age_grp} | 여행기간: {nights_days_label(trip_days)} | 활동: {act_ui}{extra_text}
+        </div>
+        """, unsafe_allow_html=True
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # -- 입력값 제출 -------------------------
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("처음으로", key="back_to_intro", use_container_width=True):
             st.session_state.page = "intro"
-        elif reset_clicked:
-            st.experimental_rerun()
-        elif predict_clicked:
-            with st.spinner("결과를 계산 중입니다... ⏳"):
-                time.sleep(1)
-                inputs = {
-                    "companion": companion,
-                    "people": people,
-                    "days": days,
-                    "lodging": lodging,
-                    "moves": moves,
-                    "budget": budget,
-                }
-                inputs["budget"] = float(budget)
-                proba = predict_failure_proba(inputs)
-                st.session_state.result = proba
-                st.session_state.page = "result"
+    with col2:
+        check_predict = st.button("여행 운명 확인하기", use_container_width=True)
+    with col3:
+        if st.button("초기화", use_container_width=True):
+            for k in ["gender","age_grp","trip_option","trip_days_long","act_ui"]:
+                if k in st.session_state: del st.session_state[k]
+            st.rerun()
+
+    # -- 모델 예측 -------------------------
+    if check_predict:
+        
+        model = get_model(model_path)
+        if model is None:
+            st.error("Opps! 잠시 후 다시 시도해주세요.")
+        
+        X = build_input_df_dynamic(
+            input_features,
+            trip_days=trip_days,
+            gender=st.session_state.gender,
+            age_grp=st.session_state.age_grp,
+            activity_type_cd=act_type,
+            payment_persona=payment_persona,
+            companions_num=companions_num,
+            season=season,
+        )
+
+        proba = float(model.predict_proba(X)[:, 1][0])
+        print(proba)
+
+        st.session_state.result = proba
+        st.session_state.page = "result"
 
 #------------------------------
 # 결과 페이지
@@ -143,8 +309,8 @@ def result_page():
     load_css(str(STYLE_DIR / "result.css"))
     render_clouds(str(ASSETS_DIR / "cloudy.png"), count=5, top_range=(5, 80), size_range=(120, 240))
 
-    st.markdown("<h2 class='page-title'>🔮 여행 운명 결과</h2>", unsafe_allow_html=True)
-    st.markdown("<p class='page-subtext'>당신의 여행 운명을 예측한 결과입니다.</p>", unsafe_allow_html=True)
+    st.markdown("<h2 class='intro-title'>여행 운명 결과</h2>", unsafe_allow_html=True)
+    st.markdown("<p class='intro-subtext'>당신의 여행 운명을 예측한 결과입니다.</p>", unsafe_allow_html=True)
 
     fail_prob = st.session_state.result
     fail_percent = int(fail_prob * 100)
@@ -166,6 +332,10 @@ def result_page():
             number={"suffix": "%"}
         )
     )
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     if fail_percent > 70:
@@ -175,7 +345,9 @@ def result_page():
                 😱 이번 여행, 망할 확률 <b>{fail_percent}%</b>! 플랜 B 준비하세요!!<br>
             </div>
             """, unsafe_allow_html=True
-        )
+        )       
+        st.audio(str(AUDIO_DIR/"king_fail.wav"), format="audio/wav", autoplay=True)
+
     elif fail_percent > 40:
         st.markdown(
             f"""
@@ -185,6 +357,8 @@ def result_page():
             </div>
             """, unsafe_allow_html=True
         )
+        st.audio(str(AUDIO_DIR/"fail.wav"), format="audio/wav", autoplay=True)
+   
     else:
         st.markdown(
             f"""
@@ -194,17 +368,17 @@ def result_page():
             </div>
             """, unsafe_allow_html=True
         )
+        st.audio(str(AUDIO_DIR/"success.wav"), format="audio/wav", autoplay=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, _, col3 = st.columns([1, 1, 1])
     with col1:
-        if st.button("⬅ 처음으로", key="back_to_intro", use_container_width=True):
+        if st.button("처음으로", key="back_to_intro", use_container_width=True):
             st.session_state.page = "intro"
-    with col2:
-        if st.button("🔄 다시 시도", key="retry", use_container_width=True):
-            st.session_state.page = "form"
     with col3:
-        if st.button("🔗 공유하기", key="share", use_container_width=True):
-            st.info("공유 기능 준비 중입니다!\n\n결과를 저장하고 친구에게 공유할 수 있도록 업데이트 예정이에요.")
+        if st.button("다시 시도", key="retry", use_container_width=True):
+            st.session_state.page = "form"
 
 #------------------------------
 # 페이지 라우팅

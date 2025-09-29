@@ -9,8 +9,8 @@ VL_csv
 # MAC os default file
 .DS_Store
 
-# # image file
-*.png
+# image file
+# *.png
 
 # pycache
 __pycache__/

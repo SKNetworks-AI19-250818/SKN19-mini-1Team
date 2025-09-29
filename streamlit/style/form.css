@@ -1,154 +1,108 @@
 /* form.css - 입력 폼 페이지 전용 스타일 */
 
-/* 전체 폼 컨테이너 */
-.form-card {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 24px 32px;
-    max-width: 720px;
-    margin: 0 auto 30px auto;
-    box-shadow: 0px 6px 16px rgba(0,0,0,0.06);
-}
-
-/* 섹션 타이틀 */
-.form-card h3 {
-    margin-top: 16px;
-    color: #0077b6;
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    border-left: 4px solid #78B9EB;
-    padding-left: 6px;
-}
-
-/* 입력 필드 사이 간격 조정 */
-.stSelectbox, .stSlider, .stNumberInput {
-    margin-bottom: 12px;
-}
-
-/* 폼 버튼 */
-.stForm button {
-    background-color: #4cc9f0 !important;
-    color: white !important;
-    font-weight: 800 !important;
-    font-size: 1.3rem !important;
-    border-radius: 12px !important;
-    width: 70% !important;
-    margin: 20px auto 0 auto;
-    display: block;
-    padding: 1em 0 !important;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
-    transition: transform 0.25s ease-in-out, background-color 0.25s ease-in-out;
-}
-
-.stForm button:hover {
-    background-color: #3cb0e8 !important;
-    transform: scale(1.05);
-}
-
-.stForm button:active {
-    transform: scale(0.96);
-}
-
-/* 폼 카드 */
-.form-card {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 24px 32px;
-    max-width: 720px;
-    margin: 0 auto 20px auto;
-    box-shadow: 0px 6px 16px rgba(0,0,0,0.06);
-}
-
 /* 타이틀 스타일 */
-.form-card h3 {
-    margin-top: 16px;
-    font-weight: 900; 
-    font-size: clamp(1.5rem, 4vw, 2rem); 
+h2.intro-title {
     text-align: center;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin: 8px 0 16px;
+    font-size: clamp(2.3rem, 5vw, 3.2rem);
+    line-height: 1.1;
     background: linear-gradient(90deg, #78B9EB 0%, #4cc9f0 30%, #E76F51 70%, #F4A261 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 0.3px rgba(0,0,0,0.05);
+}
+
+/* 서브 타이틀 설명 */
+p.intro-subtext {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #495057;
+    margin-top: 4px;
     margin-bottom: 20px;
 }
 
-/* 숫자 input 스타일 수정 */
-.stNumberInput input[type="number"] {
-    -moz-appearance: textfield;   
-    appearance: textfield;        
-    border: 1px solid #ddd;       
-    border-radius: 10px;          
-    padding: 0.6em 0.8em;         
-    font-size: 1rem;              
-    width: 100%;                  
-    background: #f6f9fc;         
+/* 공통 카드 스타일 */
+.card-section { 
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    padding: 20px;
+    margin-bottom: 20px;
 }
-.stNumberInput input[type="number"]::-webkit-outer-spin-button,
-.stNumberInput input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;     
-    margin: 0;                    
-}
-.stNumberInput button[kind="icon"] { display: none !important; } 
 
-/* 입력 필드 사이 간격 조정 */
-.stSelectbox, .stSlider, .stNumberInput {
+/* 섹션 제목 */
+.card-section h3 { 
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #0077b6;
     margin-bottom: 12px;
+    text-align: left;
+    border-left: 4px solid #78B9EB;
+    padding-left: 8px;
 }
 
-/* CTA 버튼 (폼 내부) */
-.stForm button {
-    background-color: #4cc9f0 !important;
-    color: #ffffff !important;
-    font-weight: 800 !important;
-    font-size: clamp(1rem, 2.2vw, 1.2rem) !important;  
-    border-radius: 12px !important;
-    width: 100% !important;      
-    min-height: 48px;             
-    white-space: nowrap;          
-    display: inline-flex;         
-    align-items: center;          
-    justify-content: center;      
-    margin: 12px 0 0 0;          
-    padding: 0.9em 1.2em !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    transition: transform .25s ease-in-out, background-color .25s ease-in-out;
-}
-
-.stForm button:hover {
-    background-color: #006DF0 !important;
-    transform: scale(1.05);
-}
-
-.stForm button:active {
-    transform: scale(0.96);
-}
-
-/* 하단 '처음으로', '초기화' 버튼 스타일 */
-.stButton { 
-    display: flex; 
-    justify-content: center !important; 
-    margin: 12px 0; 
-    position: relative;       
-    z-index: 1;               
-}
-
-.stButton > button {
-    background-color: #4cc9f0;
-    color: #ffffff;
-    font-weight: 800;
-    font-size: clamp(1rem, 2.2vw, 1.2rem);  
-    line-height: 1.2;                         
-    width: 100% !important;                             
-    min-height: 48px;                        
-    white-space: nowrap;                      
-    padding: 0.9em 1.2em;                     
+/* 라디오/체크/슬라이더 둥근 컨테이너 */
+.stRadio > div, .stSlider, .stNumberInput {
+    background: #f0f9ff;
+    /* border: 1px solid #dde6f1; */
     border-radius: 12px;
-    border: none;
-    box-shadow: 0px 4px 8px rgba(0,0,0,0.15);
-    transition: transform .25s ease-in-out, background-color .25s ease-in-out;
+    padding: 12px 16px;
+    /* box-shadow: inset 0 0 3px rgba(0,0,0,0.05); */
+    margin-bottom: 5px;
+    z-index: 999;
 }
-.stButton > button:hover  { background-color: #006DF0; transform: scale(1.04); } 
-.stButton > button:active { transform: scale(0.97); }        
+
+/* 활동 선택 라디오 카드 스타일 */
+.stRadio div[role="radiogroup"] label {
+    background: white;
+    border: 2px solid #f0f9ff;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin: 4px;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    z-index: 999;
+}
+.stRadio div[role="radiogroup"] label:hover { 
+    border-color: #78B9EB;
+    box-shadow: 0 3px 8px rgba(120,185,235,0.3);
+}
+.stRadio div[role="radiogroup"] label[data-checked="true"] { 
+    border-color: #0077b6;
+    background: #f0f9ff;
+    font-weight: 600;
+}
+
+/* 미리보기 카드 */
+.form-preview-card {
+    background: #E9F2FA;
+    /* border: 1px solid #dde6f1; */
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+/* 버튼 정렬 */
+.button-row { 
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+.button-row .stButton > button {
+    border-radius: 10px;
+    min-height: 50px;
+}
+.button-row .stButton:nth-child(2) > button { 
+    background: linear-gradient(90deg,#4cc9f0,#0077b6);
+    font-size: 1.2rem;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 
 /* 물방울 애니메이션 */
 .bubble {
@@ -171,6 +125,7 @@
     top: 0;
     opacity: 0.4;
     animation: floatCloud 12s ease-in-out infinite alternate;
+    z-index: 0;
 }
 
 @keyframes floatCloud {
@@ -180,3 +135,50 @@
     75%  { transform: translateX(20px) translateY(5px); }
     100% { transform: translateX(0) translateY(0); }
 }
+
+/* 카드 스타일 */
+.intro-card {
+    text-align: center;
+    background-color: #fff8e1;
+    border: 2px solid #ffc107;
+    border-radius: 14px;
+    padding: 20px;
+    margin: 20px auto;
+    /* max-width: 650px; */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.intro-card-icon {
+    font-size: 1.8rem;
+    color: #ff9800;
+    margin-bottom: 10px;
+}
+
+.intro-card-text p {
+    margin: 0;
+    color: #5c4033;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.stButton button[kind="secondary"] {
+    background-color: #4cc9f0 !important;
+    color: white !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    height: 80px;
+    padding: 0.7em 0 !important;
+}
+.stButton button[kind="secondary"]:hover {
+    background-color: #006DF0 !important;
+    color: white !important;
+}
+
+/* selectbox 전체 컨테이너를 배경 위로 */
+[data-testid="stSelectbox"] { position: relative; z-index: 20; }
+
+/* baseweb select 내부 레이어 */
+[data-baseweb="select"] { position: relative; z-index: 30; }
+
+/* 실제 드롭다운 메뉴(리스트박스) */
+div[role="listbox"] { z-index: 9999 !important; }
