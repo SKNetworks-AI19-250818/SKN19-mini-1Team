@@ -22,8 +22,11 @@ AGENTS.md
 .env
 
 # Catboost
-catboost_info/
+ML/catboost_info/
 artifacts/
+
+# vscode
+.vscode/
 
 # 산출물
 ML/outputs/**
